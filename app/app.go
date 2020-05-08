@@ -3,21 +3,26 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/bcambl/rtmpauth/controllers"
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 )
 
-// Run performs setup and starts the server.
-func Run() {
+func init() {
+	//log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.DebugLevel)
 
-	db, err := bolt.Open("rtmpauth.db", 0600, nil)
+	// Initialize the database
+	db, err := bolt.Open("rtmpauth.db", 0777, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
+	// Initialize the datatabase publisher bucket
 	db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte("PublisherBucket"))
 		if err != nil {
@@ -25,6 +30,17 @@ func Run() {
 		}
 		return nil
 	})
+
+}
+
+// Run performs setup and starts the server.
+func Run() {
+
+	db, err := bolt.Open("rtmpauth.db", 0777, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
 	c := controllers.Controller{DB: db}
 	// Load handlers

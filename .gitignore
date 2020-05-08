@@ -1,0 +1,5 @@
+#compiled bin
+rtmpauth
+
+# database files
+*.db
