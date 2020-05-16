@@ -119,7 +119,19 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	streamName := r.Form.Get("name")
 	streamKey := r.Form.Get("key")
-	log.Printf("publishing %s with key: %s\n", streamName, streamKey)
+	p, err := c.getPublisher(streamName)
+	if err != nil {
+		log.Warnf("on_publish unauthorized: %s with key: %s\n", p.Name, p.Key)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if streamKey != p.Key {
+		log.Warnf("on_publish unauthorized: %s with key: %s\n", p.Name, p.Key)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	log.Printf("on_publish authorized: %s with key: %s\n", p.Name, p.Key)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // OnPublishDoneHandler is the http handler for "/on_publish_done".
@@ -127,5 +139,17 @@ func (c *Controller) OnPublishDoneHandler(w http.ResponseWriter, r *http.Request
 	r.ParseForm()
 	streamName := r.Form.Get("name")
 	streamKey := r.Form.Get("key")
-	log.Printf("publishing %s with key: %s\n", streamName, streamKey)
+	p, err := c.getPublisher(streamName)
+	if err != nil {
+		log.Warnf("on_publish_done unauthorized: %s with key: %s\n", p.Name, p.Key)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if streamKey != p.Key {
+		log.Warnf("on_publish_done unauthorized: %s with key: %s\n", p.Name, p.Key)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	log.Printf("on_publish_done authorized: %s with key: %s\n", p.Name, p.Key)
+	w.WriteHeader(http.StatusCreated)
 }
