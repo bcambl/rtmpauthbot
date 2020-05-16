@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/bcambl/rtmpauth/config"
 	"github.com/bcambl/rtmpauth/controllers"
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
@@ -16,7 +17,7 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 
 	// Initialize the database
-	db, err := bolt.Open("rtmpauth.db", 0777, nil)
+	db, err := bolt.Open("rtmpauth.db", 0700, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,13 +37,19 @@ func init() {
 // Run performs setup and starts the server.
 func Run() {
 
-	db, err := bolt.Open("rtmpauth.db", 0777, nil)
+	var config config.Config
+	err := config.ParseEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db, err := bolt.Open("rtmpauth.db", 0700, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	c := controllers.Controller{DB: db}
+	c := controllers.Controller{Config: config, DB: db}
 	// Load handlers
 	http.HandleFunc("/", c.IndexHandler)
 

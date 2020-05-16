@@ -3,12 +3,14 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/bcambl/rtmpauth/config"
 	bolt "go.etcd.io/bbolt"
 )
 
 // Controller struct to provide the database to all handlers
 type Controller struct {
-	DB *bolt.DB
+	Config config.Config
+	DB     *bolt.DB
 }
 
 // IndexHandler is the http handler for "/".
