@@ -15,6 +15,20 @@ type Publisher struct {
 	Key  string `json:"key"`
 }
 
+// perform basic validations on a publisher record
+func (p *Publisher) isValid() error {
+	var err error
+	if len(p.Name) < 1 {
+		err = errors.New("publisher validation error: no Name")
+		return err
+	}
+	if len(p.Key) < 1 {
+		err = errors.New("publisher validation error: no Key")
+		return err
+	}
+	return nil
+}
+
 func (c *Controller) getPublisher(name string) (Publisher, error) {
 	var key []byte
 	p := Publisher{}
@@ -35,7 +49,6 @@ func (c *Controller) getPublisher(name string) (Publisher, error) {
 func (c *Controller) updatePublisher(p Publisher) error {
 	var err error
 	c.DB.Update(func(tx *bolt.Tx) error {
-		log.Debug(p)
 		b := tx.Bucket([]byte("PublisherBucket"))
 		err = b.Put([]byte(p.Name), []byte(p.Key))
 		return err
@@ -54,7 +67,7 @@ func (c *Controller) deletePublisher(name string) error {
 	return nil
 }
 
-// PublisherhHandler adds a publisher to the database
+// PublisherhHandler manages publisher database records
 func (c *Controller) PublisherhHandler(w http.ResponseWriter, r *http.Request) {
 
 	var p Publisher
@@ -62,7 +75,8 @@ func (c *Controller) PublisherhHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		name, ok := r.URL.Query()["name"]
 		if !ok || len(name[0]) < 1 {
-			log.Println("Url Param 'name' is missing")
+			err := errors.New("Missing Parameter: 'name'")
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		// URL.Query() returns a []string
@@ -84,6 +98,12 @@ func (c *Controller) PublisherhHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method == "POST" {
 		err := json.NewDecoder(r.Body).Decode(&p)
+		if err != nil {
+			log.Debug(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		err = p.isValid()
 		if err != nil {
 			log.Debug(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
