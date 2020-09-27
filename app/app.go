@@ -50,7 +50,8 @@ func Run() {
 	defer db.Close()
 
 	c := controllers.Controller{Config: config, DB: db}
-	// Load handlers
+
+	// Root Handler
 	http.HandleFunc("/", c.IndexHandler)
 
 	// Play Handlers
@@ -58,9 +59,11 @@ func Run() {
 	http.HandleFunc("/on_play_done", c.OnPlayDoneHandler)
 
 	// Publish Handlers
-	http.HandleFunc("/publisher", c.PublisherhHandler)
 	http.HandleFunc("/on_publish", c.OnPublishHandler)
 	http.HandleFunc("/on_publish_done", c.OnPublishDoneHandler)
+
+	// API Endpoints
+	http.HandleFunc("/api/publisher", c.PublisherAPIHandler)
 
 	// Serve
 	log.Info("starting rtmpauth server")

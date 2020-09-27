@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -19,14 +18,31 @@ type Publisher struct {
 func (p *Publisher) isValid() error {
 	var err error
 	if len(p.Name) < 1 {
-		err = errors.New("publisher validation error: no Name")
+		err = errors.New("missing parameter: name")
 		return err
 	}
 	if len(p.Key) < 1 {
-		err = errors.New("publisher validation error: no Key")
+		err = errors.New("missing parameter: key")
 		return err
 	}
 	return nil
+}
+
+func (c *Controller) getAllPublisher() ([]Publisher, error) {
+	publishers := []Publisher{}
+	c.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("PublisherBucket"))
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var p Publisher
+			p.Name = string(k)
+			p.Key = string(v)
+			publishers = append(publishers, p)
+		}
+		return nil
+	})
+
+	return publishers, nil
 }
 
 func (c *Controller) getPublisher(name string) (Publisher, error) {
@@ -67,73 +83,6 @@ func (c *Controller) deletePublisher(name string) error {
 	return nil
 }
 
-// PublisherhHandler manages publisher database records
-func (c *Controller) PublisherhHandler(w http.ResponseWriter, r *http.Request) {
-
-	var p Publisher
-
-	if r.Method == "GET" {
-		name, ok := r.URL.Query()["name"]
-		if !ok || len(name[0]) < 1 {
-			err := errors.New("Missing Parameter: 'name'")
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		// URL.Query() returns a []string
-		n := name[0]
-		p, err := c.getPublisher(n)
-		if err != nil {
-			log.Debug(err)
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		content, err := json.Marshal(p)
-		if err != nil {
-			log.Debug(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.Write(content)
-		return
-	}
-	if r.Method == "POST" {
-		err := json.NewDecoder(r.Body).Decode(&p)
-		if err != nil {
-			log.Debug(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		err = p.isValid()
-		if err != nil {
-			log.Debug(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		err = c.updatePublisher(p)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusCreated)
-		return
-	}
-	if r.Method == "DELETE" {
-		err := json.NewDecoder(r.Body).Decode(&p)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		err = c.deletePublisher(p.Name)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // OnPublishHandler is the http handler for "/on_publish".
 func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
@@ -141,12 +90,12 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 	streamKey := r.Form.Get("key")
 	p, err := c.getPublisher(streamName)
 	if err != nil {
-		log.Warnf("on_publish unauthorized: %s with key: %s\n", p.Name, p.Key)
+		log.Warnf("on_publish unauthorized: %s\n", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	if streamKey != p.Key {
-		log.Warnf("on_publish unauthorized: %s with key: %s\n", p.Name, p.Key)
+		log.Warnf("on_publish unauthorized: %s with 'key': %s\n", p.Name, streamKey)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
