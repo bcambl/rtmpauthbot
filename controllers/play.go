@@ -12,7 +12,7 @@ func (c *Controller) OnPlayHandler(w http.ResponseWriter, r *http.Request) {
 	streamName := r.Form.Get("name")
 	p, err := c.getPublisher(streamName)
 	if err != nil {
-		log.Warnf("on_play: stream not found %s\n", p.Name)
+		log.Warnf("on_play: stream not found: %s\n", streamName)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -26,7 +26,7 @@ func (c *Controller) OnPlayDoneHandler(w http.ResponseWriter, r *http.Request) {
 	streamName := r.Form.Get("name")
 	p, err := c.getPublisher(streamName)
 	if err != nil {
-		log.Warnf("on_play_done: stream not found %s\n", p.Name)
+		log.Warnf("on_play_done: stream not found: %s\n", streamName)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}

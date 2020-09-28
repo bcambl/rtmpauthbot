@@ -17,8 +17,6 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 	if r.Method == "GET" {
 		name, ok := r.URL.Query()["name"]
 		if !ok || len(name[0]) < 1 {
-			// err := errors.New("Missing Parameter: 'name'")
-			// http.Error(w, err.Error(), http.StatusBadRequest)
 			publishers, err := c.getAllPublisher()
 			if err != nil {
 				log.Debug(err)
