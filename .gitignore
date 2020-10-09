@@ -3,3 +3,6 @@ rtmpauth
 
 # database files
 *.db
+
+# dev files
+.local
