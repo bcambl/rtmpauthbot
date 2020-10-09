@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -17,6 +18,12 @@ func (c *Controller) OnPlayHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("on_play: %s\n", p.Name)
+
+	if c.Config.WebhookEnabled {
+		content := fmt.Sprintf(":chart_with_upwards_trend: %s gained a viewer.", streamName)
+		c.callWebhook(content)
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -31,5 +38,11 @@ func (c *Controller) OnPlayDoneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("on_play_done: %s\n", p.Name)
+
+	if c.Config.WebhookEnabled {
+		content := fmt.Sprintf(":chart_with_downwards_trend: %s lost a viewer.", streamName)
+		c.callWebhook(content)
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }

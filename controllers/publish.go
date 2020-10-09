@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -100,6 +101,17 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("on_publish authorized: %s with key: %s\n", p.Name, p.Key)
+
+	serverFQDN := c.Config.ServerFQDN
+
+	if c.Config.WebhookEnabled && (serverFQDN != "") {
+		content := fmt.Sprintf(":movie_camera: %s started streaming. vlc: `rtmp://%s/stream/%s`", streamName, serverFQDN, streamName)
+		err := c.callWebhook(content)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -120,5 +132,14 @@ func (c *Controller) OnPublishDoneHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	log.Printf("on_publish_done authorized: %s with key: %s\n", p.Name, p.Key)
+
+	if c.Config.WebhookEnabled {
+		content := fmt.Sprintf(":black_medium_small_square: %s stopped streaming.", streamName)
+		err := c.callWebhook(content)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }

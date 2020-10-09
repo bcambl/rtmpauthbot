@@ -13,3 +13,8 @@ type OnEvent struct {
 	TcURL    string `json:"tcurl"`
 	Addr     string `json:"addr"`
 }
+
+// WebhookPost is used to marshal the data sent to the discord webhook
+type WebhookPost struct {
+	Content string `json:"content"`
+}
