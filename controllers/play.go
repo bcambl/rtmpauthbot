@@ -21,7 +21,10 @@ func (c *Controller) OnPlayHandler(w http.ResponseWriter, r *http.Request) {
 
 	if c.Config.WebhookEnabled {
 		content := fmt.Sprintf(":chart_with_upwards_trend: %s gained a viewer.", streamName)
-		c.callWebhook(content)
+		err := c.callWebhook(content)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -41,7 +44,10 @@ func (c *Controller) OnPlayDoneHandler(w http.ResponseWriter, r *http.Request) {
 
 	if c.Config.WebhookEnabled {
 		content := fmt.Sprintf(":chart_with_downwards_trend: %s lost a viewer.", streamName)
-		c.callWebhook(content)
+		err := c.callWebhook(content)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
