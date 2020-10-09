@@ -29,6 +29,7 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+			log.Info("listing all publishers")
 			w.Write(content)
 			return
 		}
@@ -46,6 +47,7 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		log.Infof("listing publisher %s", p.Name)
 		w.Write(content)
 		return
 	}
@@ -67,6 +69,7 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		log.Infof("updating publisher %s", p.Name)
 		w.WriteHeader(http.StatusCreated)
 		return
 	}
@@ -81,6 +84,7 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		log.Infof("deleting publisher %s", p.Name)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
