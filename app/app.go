@@ -66,7 +66,9 @@ func Run() {
 	http.HandleFunc("/api/publisher", c.PublisherAPIHandler)
 
 	// Serve
-	log.Info("starting rtmpauth server")
-	http.ListenAndServe("127.0.0.1:9090", nil)
+	listenAddress := fmt.Sprintf("%s:%s", config.ServerIP, config.ServerPort)
+	log.Infof("starting rtmpauth server on %s", listenAddress)
+
+	http.ListenAndServe(listenAddress, nil)
 
 }
