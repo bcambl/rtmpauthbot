@@ -23,9 +23,36 @@ func init() {
 	}
 	defer db.Close()
 
+	// Initialize the datatabase configuation bucket
+	db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte("ConfigBucket"))
+		if err != nil {
+			return fmt.Errorf("error creating bucket: %s", err)
+		}
+		return nil
+	})
+
 	// Initialize the datatabase publisher bucket
 	db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte("PublisherBucket"))
+		if err != nil {
+			return fmt.Errorf("error creating bucket: %s", err)
+		}
+		return nil
+	})
+
+	// Initialize the datatabase publisher twitch channel name bucket
+	db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte("TwitchChannelBucket"))
+		if err != nil {
+			return fmt.Errorf("error creating bucket: %s", err)
+		}
+		return nil
+	})
+
+	// Initialize the datatabase publisher twitch status/live bucket
+	db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte("TwitchLiveBucket"))
 		if err != nil {
 			return fmt.Errorf("error creating bucket: %s", err)
 		}

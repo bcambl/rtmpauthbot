@@ -19,7 +19,7 @@ func (c *Controller) OnPlayHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("on_play: %s\n", p.Name)
 
-	if c.Config.WebhookEnabled {
+	if c.Config.DiscordWebhookEnabled {
 		content := fmt.Sprintf(":chart_with_upwards_trend: %s gained a viewer.", streamName)
 		err := c.callWebhook(content)
 		if err != nil {
@@ -42,7 +42,7 @@ func (c *Controller) OnPlayDoneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("on_play_done: %s\n", p.Name)
 
-	if c.Config.WebhookEnabled {
+	if c.Config.DiscordWebhookEnabled {
 		content := fmt.Sprintf(":chart_with_downwards_trend: %s lost a viewer.", streamName)
 		err := c.callWebhook(content)
 		if err != nil {
