@@ -14,6 +14,7 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Add("Content-Type", "application/json")
 
+	// API GET REQUESTS
 	if r.Method == "GET" {
 		name, ok := r.URL.Query()["name"]
 		if !ok || len(name[0]) < 1 {
@@ -51,6 +52,8 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 		w.Write(content)
 		return
 	}
+
+	// API POST REQUESTS
 	if r.Method == "POST" {
 		err := json.NewDecoder(r.Body).Decode(&p)
 		if err != nil {
@@ -73,10 +76,17 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusCreated)
 		return
 	}
+
+	// API DELETE REQUESTS
 	if r.Method == "DELETE" {
 		err := json.NewDecoder(r.Body).Decode(&p)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_, err = c.getPublisher(p.Name)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		err = c.deletePublisher(p.Name)

@@ -9,10 +9,11 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-// Publisher struct contains streamer names and stream keys
+// Publisher struct contains rtmp stream name, stream key, twitch channel name
 type Publisher struct {
-	Name string `json:"name"`
-	Key  string `json:"key"`
+	Name         string `json:"name"`
+	Key          string `json:"key"`
+	TwitchStream string `json:"twitch_stream"`
 }
 
 // perform basic validations on a publisher record
@@ -43,11 +44,21 @@ func (c *Controller) getAllPublisher() ([]Publisher, error) {
 		return nil
 	})
 
+	for i := range publishers {
+		p := &publishers[i]
+		c.DB.View(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte("TwitchStreamBucket"))
+			stream := b.Get([]byte(p.Name))
+			p.TwitchStream = string(stream)
+			return nil
+		})
+	}
+
 	return publishers, nil
 }
 
 func (c *Controller) getPublisher(name string) (Publisher, error) {
-	var key []byte
+	var key, stream []byte
 	p := Publisher{}
 	c.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("PublisherBucket"))
@@ -60,6 +71,14 @@ func (c *Controller) getPublisher(name string) (Publisher, error) {
 	p.Name = name
 	p.Key = string(key)
 
+	c.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("TwitchStreamBucket"))
+		stream = b.Get([]byte(name))
+		return nil
+	})
+
+	p.TwitchStream = string(stream)
+
 	return p, nil
 }
 
@@ -70,6 +89,15 @@ func (c *Controller) updatePublisher(p Publisher) error {
 		err = b.Put([]byte(p.Name), []byte(p.Key))
 		return err
 	})
+
+	if p.TwitchStream != "" {
+		c.DB.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte("TwitchStreamBucket"))
+			err = b.Put([]byte(p.Name), []byte(p.TwitchStream))
+			return err
+		})
+	}
+
 	return nil
 }
 
@@ -77,6 +105,12 @@ func (c *Controller) deletePublisher(name string) error {
 	log.Debug("deleting ", name)
 	c.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("PublisherBucket"))
+		err := b.Delete([]byte(name))
+		log.Debug(err)
+		return err
+	})
+	c.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("TwitchStreamBucket"))
 		err := b.Delete([]byte(name))
 		log.Debug(err)
 		return err

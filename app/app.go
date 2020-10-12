@@ -24,10 +24,10 @@ func init() {
 	defer db.Close()
 
 	bucketList := []string{
-		"ConfigBucket",        // General configuration & caching
-		"PublisherBucket",     // Local publishers -> rtmp stream keys
-		"TwitchChannelBucket", // Local publishers -> twitch stream names
-		"TwitchLiveBucket",    // Local publishers -> twitch live stream status
+		"ConfigBucket",       // General configuration & caching
+		"PublisherBucket",    // Local publishers -> rtmp stream keys
+		"TwitchStreamBucket", // Local publishers -> twitch stream names
+		"TwitchLiveBucket",   // Local publishers -> twitch live stream status
 	}
 
 	for b := range bucketList {

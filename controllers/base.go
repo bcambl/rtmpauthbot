@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/bcambl/rtmpauth/config"
+	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -25,10 +26,10 @@ func (c *Controller) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// 	log.Error(err)
 	// }
 
-	// c.getStreams(publishers)
-	// if err != nil {
-	// 	log.Error(err)
-	// }
+	_, err := c.getStreams()
+	if err != nil {
+		log.Error(err)
+	}
 
 	// log.Printf("config token: ", c.Config.TwitchAccessToken)
 
