@@ -21,11 +21,12 @@ func (c *Controller) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	//var err error
 
-	publishers, err := c.getAllPublisher()
-	if err != nil {
-		log.Error(err)
-	}
-	c.getStreams(publishers)
+	// publishers, err := c.getAllPublisher()
+	// if err != nil {
+	// 	log.Error(err)
+	// }
+
+	_, err := c.getStreams()
 	if err != nil {
 		log.Error(err)
 	}

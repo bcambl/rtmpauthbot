@@ -23,42 +23,23 @@ func init() {
 	}
 	defer db.Close()
 
-	// Initialize the datatabase configuation bucket
-	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("ConfigBucket"))
-		if err != nil {
-			return fmt.Errorf("error creating bucket: %s", err)
-		}
-		return nil
-	})
+	bucketList := []string{
+		"ConfigBucket",       // General configuration & caching
+		"PublisherBucket",    // Local publishers -> rtmp stream keys
+		"TwitchStreamBucket", // Local publishers -> twitch stream names
+		"TwitchLiveBucket",   // Local publishers -> twitch live stream status
+	}
 
-	// Initialize the datatabase publisher bucket
-	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("PublisherBucket"))
-		if err != nil {
-			return fmt.Errorf("error creating bucket: %s", err)
-		}
-		return nil
-	})
-
-	// Initialize the datatabase publisher twitch channel name bucket
-	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("TwitchChannelBucket"))
-		if err != nil {
-			return fmt.Errorf("error creating bucket: %s", err)
-		}
-		return nil
-	})
-
-	// Initialize the datatabase publisher twitch status/live bucket
-	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("TwitchLiveBucket"))
-		if err != nil {
-			return fmt.Errorf("error creating bucket: %s", err)
-		}
-		return nil
-	})
-
+	for b := range bucketList {
+		log.Debug("db: ensuring bucket exists: ", bucketList[b])
+		db.Update(func(tx *bolt.Tx) error {
+			_, err := tx.CreateBucketIfNotExists([]byte(bucketList[b]))
+			if err != nil {
+				return fmt.Errorf("error creating bucket: %s", err)
+			}
+			return nil
+		})
+	}
 }
 
 // Run performs setup and starts the server.

@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -17,6 +17,23 @@ const (
 	defaultClientID     = "abcd1234"
 	defaultClientSecret = "abcd1234"
 )
+
+// TwitchStreamsResponse to marshal the json response from /helix/streams/
+type TwitchStreamsResponse struct {
+	Data []StreamData `json:"data"`
+}
+
+// StreamData to marshal the inner data of the TwitchStreamsResponse
+type StreamData struct {
+	ID          string `json:"id"`
+	UserID      string `json:"user_id"`
+	UserName    string `json:"user_name"`
+	GameID      string `json:"game_id"`
+	Type        string `json:"type"`
+	Title       string `json:"title"`
+	ViewerCount int    `json:"viewer_count"`
+	StartedAt   string `json:"started_at"`
+}
 
 // retrieve cached twitch access token from database and set in the
 // Config struct. This is only called when the token is not set in Config
@@ -61,16 +78,9 @@ func validateAccessToken(accessToken string) error {
 	}
 	defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
 	if resp.StatusCode != 200 {
 		return errors.New("token validation response status code != 200")
 	}
-
-	log.Debug(string(data))
 
 	return nil
 }
@@ -136,26 +146,34 @@ func (c *Controller) TwitchAuthToken() (string, error) {
 	return token, nil
 }
 
-func (c *Controller) getStreams(publishers []Publisher) error {
+func (c *Controller) getStreams() ([]StreamData, error) {
 
 	var err error
 	var userQuery string
 
 	err = c.validateClientCredentials()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	accessToken, err := c.TwitchAuthToken()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for p := range publishers {
+	publishers, err := c.getAllPublisher()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range publishers {
+		if publishers[i].TwitchStream == "" {
+			continue
+		}
 		if userQuery != "" {
 			userQuery = userQuery + "&"
 		}
-		userQuery = userQuery + fmt.Sprintf("user_login=%s", publishers[p].Name)
+		userQuery = userQuery + fmt.Sprintf("user_login=%s", publishers[i].Name)
 	}
 
 	userStreamURL := "https://api.twitch.tv/helix/streams/?" + userQuery
@@ -170,16 +188,22 @@ func (c *Controller) getStreams(publishers []Publisher) error {
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
+	streamResponse := TwitchStreamsResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&streamResponse)
 	if err != nil {
-		log.Error(err)
+		return nil, err
 	}
 
-	log.Printf("%v", string(data))
+	if len(streamResponse.Data) == 0 {
+		log.Debug("no twitch streams currently live")
+	}
+	for i := range streamResponse.Data {
+		log.Debug("Live Now:", streamResponse.Data[i].UserName)
+	}
 
-	return nil
+	return streamResponse.Data, nil
 }
