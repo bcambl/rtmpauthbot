@@ -120,8 +120,8 @@ func (c *Controller) validateClientCredentials() error {
 	return nil
 }
 
-// TwitchAuthToken handles the lifecycle of the twitch access token
-func (c *Controller) TwitchAuthToken() (string, error) {
+//twitchAuthToken handles the lifecycle of the twitch access token
+func (c *Controller) twitchAuthToken() (string, error) {
 	var token string
 	var err error
 
@@ -156,7 +156,7 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 		return nil, err
 	}
 
-	accessToken, err := c.TwitchAuthToken()
+	accessToken, err := c.twitchAuthToken()
 	if err != nil {
 		return nil, err
 	}
