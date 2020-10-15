@@ -109,11 +109,11 @@ func (c *Controller) getNewAuthToken() error {
 }
 
 func (c *Controller) validateClientCredentials() error {
-	if c.Config.TwitchClientID == defaultClientID {
+	if c.Config.TwitchClientID == defaultClientID || c.Config.TwitchClientID == "" {
 		err := errors.New("Default twitch client id value detected. Skipping twitch call")
 		return err
 	}
-	if c.Config.TwitchClientSecret == defaultClientSecret {
+	if c.Config.TwitchClientSecret == defaultClientSecret || c.Config.TwitchClientSecret == "" {
 		err := errors.New("Default twitch client secret value detected. Skipping twitch call")
 		return err
 	}
