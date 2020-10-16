@@ -146,10 +146,27 @@ func (c *Controller) twitchAuthToken() (string, error) {
 	return token, nil
 }
 
+func streamQueryURL(publishers []Publisher) string {
+	var userQuery string
+	for i := range publishers {
+		if publishers[i].TwitchStream == "" {
+			continue
+		}
+		if userQuery != "" {
+			userQuery = userQuery + "&"
+		}
+		userQuery = userQuery + fmt.Sprintf("user_login=%s", publishers[i].Name)
+	}
+
+	return "https://api.twitch.tv/helix/streams/?" + userQuery
+}
+
 func (c *Controller) getStreams() ([]StreamData, error) {
 
-	var err error
-	var userQuery string
+	var (
+		err         error
+		streamQuery string
+	)
 
 	err = c.validateClientCredentials()
 	if err != nil {
@@ -166,19 +183,9 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 		return nil, err
 	}
 
-	for i := range publishers {
-		if publishers[i].TwitchStream == "" {
-			continue
-		}
-		if userQuery != "" {
-			userQuery = userQuery + "&"
-		}
-		userQuery = userQuery + fmt.Sprintf("user_login=%s", publishers[i].Name)
-	}
+	streamQuery = streamQueryURL(publishers)
 
-	userStreamURL := "https://api.twitch.tv/helix/streams/?" + userQuery
-
-	r, err := http.NewRequest("GET", userStreamURL, nil)
+	r, err := http.NewRequest("GET", streamQuery, nil)
 	if err != nil {
 		log.Error(err)
 	}
