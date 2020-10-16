@@ -31,7 +31,7 @@ func (c *Controller) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		log.Error(err)
 	}
 
-	err = updateLiveStatus(streams)
+	err = c.updateLiveStatus(streams)
 	if err != nil {
 		log.Error(err)
 	}

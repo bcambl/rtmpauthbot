@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -199,8 +200,13 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 	}
 	defer resp.Body.Close()
 
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
 	streamResponse := TwitchStreamsResponse{}
-	err = json.NewDecoder(resp.Body).Decode(&streamResponse)
+	err = json.Unmarshal(body, &streamResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -213,4 +219,51 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 	}
 
 	return streamResponse.Data, nil
+}
+
+func (c *Controller) updateNotificationStatus(name string, notified bool) error {
+	return nil
+}
+
+func (c *Controller) updateLiveStatus(streams []StreamData) error {
+
+	publishers, err := c.getAllPublisher()
+	if err != nil {
+		return err
+	}
+
+	// mark previous live streams -> offline
+	for i := range publishers {
+		p := &publishers[i]
+		if p.IsTwitchLive() {
+			for x := range streams {
+				s := streams[x]
+				if s.UserName == p.TwitchStream {
+					continue
+				}
+			}
+			c.setTwitchLive(p, "")
+			notification := fmt.Sprintf("%s is no longer live on twitch", p.TwitchStream)
+			c.setTwitchNotification(p, notification)
+		}
+	}
+
+	// mark live twitch streams -> online
+	for x := range streams {
+		s := streams[x]
+		for i := range publishers {
+			p := &publishers[i]
+			if p.TwitchStream == s.UserName {
+				if p.IsTwitchLive() {
+					continue
+				}
+				c.setTwitchLive(p, s.Type)
+				notification := fmt.Sprintf("%s is live on twitch: %s", p.TwitchStream, s.Title)
+				c.setTwitchNotification(p, notification)
+			}
+
+		}
+	}
+
+	return nil
 }
