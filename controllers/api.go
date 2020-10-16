@@ -61,7 +61,7 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		err = p.isValid()
+		err = p.IsValid()
 		if err != nil {
 			log.Debug(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)

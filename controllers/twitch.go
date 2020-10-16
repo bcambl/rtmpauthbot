@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -109,19 +110,19 @@ func (c *Controller) getNewAuthToken() error {
 }
 
 func (c *Controller) validateClientCredentials() error {
-	if c.Config.TwitchClientID == defaultClientID {
+	if c.Config.TwitchClientID == defaultClientID || c.Config.TwitchClientID == "" {
 		err := errors.New("Default twitch client id value detected. Skipping twitch call")
 		return err
 	}
-	if c.Config.TwitchClientSecret == defaultClientSecret {
+	if c.Config.TwitchClientSecret == defaultClientSecret || c.Config.TwitchClientSecret == "" {
 		err := errors.New("Default twitch client secret value detected. Skipping twitch call")
 		return err
 	}
 	return nil
 }
 
-// TwitchAuthToken handles the lifecycle of the twitch access token
-func (c *Controller) TwitchAuthToken() (string, error) {
+//twitchAuthToken handles the lifecycle of the twitch access token
+func (c *Controller) twitchAuthToken() (string, error) {
 	var token string
 	var err error
 
@@ -146,26 +147,8 @@ func (c *Controller) TwitchAuthToken() (string, error) {
 	return token, nil
 }
 
-func (c *Controller) getStreams() ([]StreamData, error) {
-
-	var err error
+func streamQueryURL(publishers []Publisher) string {
 	var userQuery string
-
-	err = c.validateClientCredentials()
-	if err != nil {
-		return nil, err
-	}
-
-	accessToken, err := c.TwitchAuthToken()
-	if err != nil {
-		return nil, err
-	}
-
-	publishers, err := c.getAllPublisher()
-	if err != nil {
-		return nil, err
-	}
-
 	for i := range publishers {
 		if publishers[i].TwitchStream == "" {
 			continue
@@ -176,9 +159,34 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 		userQuery = userQuery + fmt.Sprintf("user_login=%s", publishers[i].Name)
 	}
 
-	userStreamURL := "https://api.twitch.tv/helix/streams/?" + userQuery
+	return "https://api.twitch.tv/helix/streams/?" + userQuery
+}
 
-	r, err := http.NewRequest("GET", userStreamURL, nil)
+func (c *Controller) getStreams() ([]StreamData, error) {
+
+	var (
+		err         error
+		streamQuery string
+	)
+
+	err = c.validateClientCredentials()
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := c.twitchAuthToken()
+	if err != nil {
+		return nil, err
+	}
+
+	publishers, err := c.getAllPublisher()
+	if err != nil {
+		return nil, err
+	}
+
+	streamQuery = streamQueryURL(publishers)
+
+	r, err := http.NewRequest("GET", streamQuery, nil)
 	if err != nil {
 		log.Error(err)
 	}
@@ -192,8 +200,13 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 	}
 	defer resp.Body.Close()
 
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
 	streamResponse := TwitchStreamsResponse{}
-	err = json.NewDecoder(resp.Body).Decode(&streamResponse)
+	err = json.Unmarshal(body, &streamResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -206,4 +219,51 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 	}
 
 	return streamResponse.Data, nil
+}
+
+func (c *Controller) updateNotificationStatus(name string, notified bool) error {
+	return nil
+}
+
+func (c *Controller) updateLiveStatus(streams []StreamData) error {
+
+	publishers, err := c.getAllPublisher()
+	if err != nil {
+		return err
+	}
+
+	// mark previous live streams -> offline
+	for i := range publishers {
+		p := &publishers[i]
+		if p.IsTwitchLive() {
+			for x := range streams {
+				s := streams[x]
+				if s.UserName == p.TwitchStream {
+					continue
+				}
+			}
+			c.setTwitchLive(p, "")
+			notification := fmt.Sprintf("%s is no longer live on twitch", p.TwitchStream)
+			c.setTwitchNotification(p, notification)
+		}
+	}
+
+	// mark live twitch streams -> online
+	for x := range streams {
+		s := streams[x]
+		for i := range publishers {
+			p := &publishers[i]
+			if p.TwitchStream == s.UserName {
+				if p.IsTwitchLive() {
+					continue
+				}
+				c.setTwitchLive(p, s.Type)
+				notification := fmt.Sprintf("%s is live on twitch: %s", p.TwitchStream, s.Title)
+				c.setTwitchNotification(p, notification)
+			}
+
+		}
+	}
+
+	return nil
 }
