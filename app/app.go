@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -59,6 +60,11 @@ func Run() {
 	defer db.Close()
 
 	c := controllers.Controller{Config: config, DB: db}
+
+	// Start Twitch polling scheduler
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	c.TwitchScheduler(ctx, c.Config.TwitchPollRate)
 
 	// Root Handler
 	http.HandleFunc("/", c.IndexHandler)

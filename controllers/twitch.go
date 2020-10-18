@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
@@ -156,9 +157,10 @@ func streamQueryURL(publishers []Publisher) string {
 		if userQuery != "" {
 			userQuery = userQuery + "&"
 		}
-		userQuery = userQuery + fmt.Sprintf("user_login=%s", publishers[i].Name)
+		userQuery = userQuery + fmt.Sprintf("user_login=%s", publishers[i].TwitchStream)
 	}
 
+	log.Debug("stream userQuery: ", userQuery)
 	return "https://api.twitch.tv/helix/streams/?" + userQuery
 }
 
@@ -221,10 +223,6 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 	return streamResponse.Data, nil
 }
 
-func (c *Controller) updateNotificationStatus(name string, notified bool) error {
-	return nil
-}
-
 func (c *Controller) updateLiveStatus(streams []StreamData) error {
 
 	publishers, err := c.getAllPublisher()
@@ -261,9 +259,36 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 				notification := fmt.Sprintf("%s is live on twitch: %s", p.TwitchStream, s.Title)
 				c.setTwitchNotification(p, notification)
 			}
-
 		}
 	}
 
 	return nil
+}
+
+func (c *Controller) twitchMain() {
+	streams, err := c.getStreams()
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = c.updateLiveStatus(streams)
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+// TwitchScheduler launches the twitch stream query & notification background processes
+func (c *Controller) TwitchScheduler(ctx context.Context, pollRate time.Duration) {
+	ticker := time.NewTicker(pollRate)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				c.twitchMain()
+			case <-ctx.Done():
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 }
