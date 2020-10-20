@@ -11,6 +11,7 @@ type Config struct {
 	ServerIP              string
 	ServerPort            string
 	ServerFQDN            string
+	TwitchEnabled         bool
 	TwitchClientID        string
 	TwitchClientSecret    string
 	DiscordWebhook        string
@@ -30,14 +31,18 @@ func (c *Config) ParseEnv() error {
 	c.TwitchClientID = os.Getenv("TWITCH_CLIENT_ID")
 	c.TwitchClientSecret = os.Getenv("TWITCH_CLIENT_SECRET")
 	c.DiscordWebhook = os.Getenv("DISCORD_WEBHOOK")
-	_, err = strconv.ParseBool(os.Getenv("DISCORD_WEBHOOK_ENABLED"))
+	c.DiscordWebhookEnabled, err = strconv.ParseBool(os.Getenv("DISCORD_WEBHOOK_ENABLED"))
 	if err == nil {
-		c.DiscordWebhookEnabled = true
+		return err
+	}
+	c.TwitchEnabled, err = strconv.ParseBool(os.Getenv("TWITCH_ENABLED"))
+	if err == nil {
+		return err
 	}
 	pollRateSec, err = strconv.ParseInt(os.Getenv("TWITCH_POLL_RATE"), 0, 0)
 	if err != nil {
-		// Default poll rate to 60sec which is within allowed rate limits
-		pollRateSec = 10
+		// Default poll rate to 60sec (far below allowed rate limits)
+		pollRateSec = 60
 	}
 	// ensure a sane minimum twitch poll rate
 	if pollRateSec < 5 {

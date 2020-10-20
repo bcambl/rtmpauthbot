@@ -61,10 +61,16 @@ func Run() {
 
 	c := controllers.Controller{Config: config, DB: db}
 
-	// Start Twitch polling scheduler
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	c.TwitchScheduler(ctx, c.Config.TwitchPollRate)
+	// Start Twitch polling scheduler if integration is enabled
+	if c.Config.TwitchEnabled {
+		log.Infof("twitch integration enabled")
+		log.Infof("starting twitch scheduler (poll rate: %s)", c.Config.TwitchPollRate.String())
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		c.TwitchScheduler(ctx, c.Config.TwitchPollRate)
+	} else {
+		log.Infof("twitch integration disabled")
+	}
 
 	// Root Handler
 	http.HandleFunc("/", c.IndexHandler)
