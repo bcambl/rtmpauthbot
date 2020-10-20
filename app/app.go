@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,9 +14,15 @@ import (
 )
 
 func init() {
-	//log.SetFormatter(&log.JSONFormatter{})
+	debugFlag := flag.Bool("debug", false, "enable debug logging")
+	flag.Parse()
+
+	logLevel := log.InfoLevel
+	if *debugFlag {
+		logLevel = log.DebugLevel
+	}
 	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(logLevel)
 
 	// Initialize the database
 	db, err := bolt.Open("rtmpauth.db", 0700, nil)
@@ -58,7 +66,18 @@ func Run() {
 	}
 	defer db.Close()
 
-	c := controllers.Controller{Config: config, DB: db}
+	c := controllers.Controller{Config: &config, DB: db}
+
+	// Start Twitch polling scheduler if integration is enabled
+	if c.Config.TwitchEnabled {
+		log.Infof("twitch integration enabled")
+		log.Infof("starting twitch scheduler (poll rate: %s)", c.Config.TwitchPollRate.String())
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		c.TwitchScheduler(ctx, c.Config.TwitchPollRate)
+	} else {
+		log.Infof("twitch integration disabled")
+	}
 
 	// Root Handler
 	http.HandleFunc("/", c.IndexHandler)
