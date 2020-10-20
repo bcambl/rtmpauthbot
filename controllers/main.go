@@ -9,7 +9,7 @@ import (
 
 // Controller struct to provide the database to all handlers
 type Controller struct {
-	Config config.Config
+	Config *config.Config
 	DB     *bolt.DB
 }
 

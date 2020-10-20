@@ -36,7 +36,7 @@ func (c *Config) ParseEnv() error {
 		return err
 	}
 	c.TwitchEnabled, err = strconv.ParseBool(os.Getenv("TWITCH_ENABLED"))
-	if err == nil {
+	if err != nil {
 		return err
 	}
 	pollRateSec, err = strconv.ParseInt(os.Getenv("TWITCH_POLL_RATE"), 0, 0)
