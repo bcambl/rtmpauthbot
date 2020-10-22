@@ -18,7 +18,7 @@ type Publisher struct {
 	TwitchNotification string `json:"twitch_notification"`
 }
 
-// perform basic validations on a publisher record
+// IsValid perform basic validations on a publisher record
 func (p *Publisher) IsValid() error {
 	var err error
 	if len(p.Name) < 1 {
@@ -32,6 +32,7 @@ func (p *Publisher) IsValid() error {
 	return nil
 }
 
+// IsTwitchLive returns a boolean based on string value of TwitchLive field
 func (p *Publisher) IsTwitchLive() bool {
 	if p.TwitchLive != "" {
 		return true

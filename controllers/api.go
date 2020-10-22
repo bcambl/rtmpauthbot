@@ -99,4 +99,5 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	w.WriteHeader(http.StatusNotImplemented)
+	return
 }

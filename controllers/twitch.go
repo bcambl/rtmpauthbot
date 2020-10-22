@@ -67,6 +67,10 @@ func (c *Controller) updateCachedAccessToken(accessToken string) error {
 }
 
 func validateAccessToken(accessToken string) error {
+	if accessToken == "" {
+		err := errors.New("token validation fail - not set")
+		return err
+	}
 	r, err := http.NewRequest("GET", "https://id.twitch.tv/oauth2/validate", nil)
 	if err != nil {
 		log.Error(err)
@@ -129,7 +133,7 @@ func (c *Controller) twitchAuthToken() (string, error) {
 
 	token, err = c.getCachedAccessToken()
 	if err != nil {
-		return "", err
+		log.Debug(err)
 	}
 
 	err = validateAccessToken(token)
@@ -148,7 +152,7 @@ func (c *Controller) twitchAuthToken() (string, error) {
 	return token, nil
 }
 
-func streamQueryURL(publishers []Publisher) string {
+func streamQueryURL(publishers []Publisher) (string, error) {
 	var userQuery string
 	for i := range publishers {
 		if publishers[i].TwitchStream == "" {
@@ -160,8 +164,13 @@ func streamQueryURL(publishers []Publisher) string {
 		userQuery = userQuery + fmt.Sprintf("user_login=%s", publishers[i].TwitchStream)
 	}
 
+	if userQuery == "" {
+		err := errors.New("no streams to query")
+		return "", err
+	}
+
 	log.Debug("stream userQuery: ", userQuery)
-	return "https://api.twitch.tv/helix/streams/?" + userQuery
+	return "https://api.twitch.tv/helix/streams/?" + userQuery, nil
 }
 
 func (c *Controller) getStreams() ([]StreamData, error) {
@@ -186,7 +195,10 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 		return nil, err
 	}
 
-	streamQuery = streamQueryURL(publishers)
+	streamQuery, err = streamQueryURL(publishers)
+	if err != nil {
+		return nil, err
+	}
 
 	r, err := http.NewRequest("GET", streamQuery, nil)
 	if err != nil {
@@ -268,12 +280,20 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 func (c *Controller) twitchMain() {
 	streams, err := c.getStreams()
 	if err != nil {
-		log.Error(err)
+		log.Debug(err)
+		return
 	}
 
 	err = c.updateLiveStatus(streams)
 	if err != nil {
 		log.Error(err)
+		return
+	}
+
+	err = c.processNotifications()
+	if err != nil {
+		log.Error(err)
+		return
 	}
 }
 
