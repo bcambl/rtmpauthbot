@@ -18,7 +18,7 @@ type Publisher struct {
 	TwitchNotification string `json:"twitch_notification"`
 }
 
-// perform basic validations on a publisher record
+// IsValid perform basic validations on a publisher record
 func (p *Publisher) IsValid() error {
 	var err error
 	if len(p.Name) < 1 {
@@ -32,6 +32,7 @@ func (p *Publisher) IsValid() error {
 	return nil
 }
 
+// IsTwitchLive returns a boolean based on string value of TwitchLive field
 func (p *Publisher) IsTwitchLive() bool {
 	if p.TwitchLive != "" {
 		return true
@@ -149,6 +150,12 @@ func (c *Controller) updatePublisher(p Publisher) error {
 			return err
 		})
 	}
+
+	c.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("TwitchLiveBucket"))
+		err = b.Put([]byte(p.Name), []byte(p.TwitchLive))
+		return err
+	})
 
 	return nil
 }

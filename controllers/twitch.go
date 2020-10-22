@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -67,6 +68,10 @@ func (c *Controller) updateCachedAccessToken(accessToken string) error {
 }
 
 func validateAccessToken(accessToken string) error {
+	if accessToken == "" {
+		err := errors.New("token validation fail - not set")
+		return err
+	}
 	r, err := http.NewRequest("GET", "https://id.twitch.tv/oauth2/validate", nil)
 	if err != nil {
 		log.Error(err)
@@ -129,7 +134,7 @@ func (c *Controller) twitchAuthToken() (string, error) {
 
 	token, err = c.getCachedAccessToken()
 	if err != nil {
-		return "", err
+		log.Debug(err)
 	}
 
 	err = validateAccessToken(token)
@@ -148,7 +153,7 @@ func (c *Controller) twitchAuthToken() (string, error) {
 	return token, nil
 }
 
-func streamQueryURL(publishers []Publisher) string {
+func streamQueryURL(publishers []Publisher) (string, error) {
 	var userQuery string
 	for i := range publishers {
 		if publishers[i].TwitchStream == "" {
@@ -160,8 +165,13 @@ func streamQueryURL(publishers []Publisher) string {
 		userQuery = userQuery + fmt.Sprintf("user_login=%s", publishers[i].TwitchStream)
 	}
 
+	if userQuery == "" {
+		err := errors.New("no streams to query")
+		return "", err
+	}
+
 	log.Debug("stream userQuery: ", userQuery)
-	return "https://api.twitch.tv/helix/streams/?" + userQuery
+	return "https://api.twitch.tv/helix/streams/?" + userQuery, nil
 }
 
 func (c *Controller) getStreams() ([]StreamData, error) {
@@ -186,7 +196,10 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 		return nil, err
 	}
 
-	streamQuery = streamQueryURL(publishers)
+	streamQuery, err = streamQueryURL(publishers)
+	if err != nil {
+		return nil, err
+	}
 
 	r, err := http.NewRequest("GET", streamQuery, nil)
 	if err != nil {
@@ -225,6 +238,7 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 
 func (c *Controller) updateLiveStatus(streams []StreamData) error {
 
+	var live bool
 	publishers, err := c.getAllPublisher()
 	if err != nil {
 		return err
@@ -232,17 +246,20 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 
 	// mark previous live streams -> offline
 	for i := range publishers {
+		live = false
 		p := &publishers[i]
 		if p.IsTwitchLive() {
 			for x := range streams {
 				s := streams[x]
-				if s.UserName == p.TwitchStream {
-					continue
+				if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
+					live = true
 				}
 			}
-			c.setTwitchLive(p, "")
-			notification := fmt.Sprintf("%s is no longer live on twitch", p.TwitchStream)
-			c.setTwitchNotification(p, notification)
+			if !live {
+				c.setTwitchLive(p, "")
+				notification := fmt.Sprintf("%s is no longer live on twitch", p.TwitchStream)
+				c.setTwitchNotification(p, notification)
+			}
 		}
 	}
 
@@ -251,13 +268,50 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 		s := streams[x]
 		for i := range publishers {
 			p := &publishers[i]
-			if p.TwitchStream == s.UserName {
-				if p.IsTwitchLive() {
-					continue
+			if p.TwitchStream == "" {
+				continue
+			}
+			if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
+				if !p.IsTwitchLive() {
+					c.setTwitchLive(p, s.Type)
+					notification := fmt.Sprintf("%s is live on twitch: %s", p.TwitchStream, s.Title)
+					c.setTwitchNotification(p, notification)
 				}
-				c.setTwitchLive(p, s.Type)
-				notification := fmt.Sprintf("%s is live on twitch: %s", p.TwitchStream, s.Title)
-				c.setTwitchNotification(p, notification)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Controller) processNotifications() error {
+
+	publishers, err := c.getAllPublisher()
+	if err != nil {
+		return err
+	}
+
+	for i := range publishers {
+		p := publishers[i]
+		if p.TwitchLive == "" && p.TwitchNotification == "" {
+			continue
+		}
+		if p.TwitchLive != "" && p.TwitchNotification == "" {
+			continue
+		}
+		log.Debug("notification: ", p.TwitchNotification)
+		if c.Config.DiscordWebhookEnabled {
+			log.Debug("sending discord notification: %s", p.TwitchNotification)
+			err := c.callWebhook(p.TwitchNotification)
+			if err != nil {
+				return err
+			}
+		}
+		if p.TwitchNotification != "" {
+			log.Debugf("resetting notification for %s (%s)\n", p.Name, p.TwitchStream)
+			err = c.setTwitchNotification(&p, "")
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -268,12 +322,20 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 func (c *Controller) twitchMain() {
 	streams, err := c.getStreams()
 	if err != nil {
-		log.Error(err)
+		log.Debug(err)
+		return
 	}
 
 	err = c.updateLiveStatus(streams)
 	if err != nil {
 		log.Error(err)
+		return
+	}
+
+	err = c.processNotifications()
+	if err != nil {
+		log.Error(err)
+		return
 	}
 }
 
