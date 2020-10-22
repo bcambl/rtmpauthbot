@@ -151,6 +151,12 @@ func (c *Controller) updatePublisher(p Publisher) error {
 		})
 	}
 
+	c.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("TwitchLiveBucket"))
+		err = b.Put([]byte(p.Name), []byte(p.TwitchLive))
+		return err
+	})
+
 	return nil
 }
 

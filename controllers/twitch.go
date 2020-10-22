@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -237,6 +238,7 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 
 func (c *Controller) updateLiveStatus(streams []StreamData) error {
 
+	var live bool
 	publishers, err := c.getAllPublisher()
 	if err != nil {
 		return err
@@ -244,17 +246,20 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 
 	// mark previous live streams -> offline
 	for i := range publishers {
+		live = false
 		p := &publishers[i]
 		if p.IsTwitchLive() {
 			for x := range streams {
 				s := streams[x]
-				if s.UserName == p.TwitchStream {
-					continue
+				if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
+					live = true
 				}
 			}
-			c.setTwitchLive(p, "")
-			notification := fmt.Sprintf("%s is no longer live on twitch", p.TwitchStream)
-			c.setTwitchNotification(p, notification)
+			if !live {
+				c.setTwitchLive(p, "")
+				notification := fmt.Sprintf("%s is no longer live on twitch", p.TwitchStream)
+				c.setTwitchNotification(p, notification)
+			}
 		}
 	}
 
@@ -263,13 +268,50 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 		s := streams[x]
 		for i := range publishers {
 			p := &publishers[i]
-			if p.TwitchStream == s.UserName {
-				if p.IsTwitchLive() {
-					continue
+			if p.TwitchStream == "" {
+				continue
+			}
+			if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
+				if !p.IsTwitchLive() {
+					c.setTwitchLive(p, s.Type)
+					notification := fmt.Sprintf("%s is live on twitch: %s", p.TwitchStream, s.Title)
+					c.setTwitchNotification(p, notification)
 				}
-				c.setTwitchLive(p, s.Type)
-				notification := fmt.Sprintf("%s is live on twitch: %s", p.TwitchStream, s.Title)
-				c.setTwitchNotification(p, notification)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Controller) processNotifications() error {
+
+	publishers, err := c.getAllPublisher()
+	if err != nil {
+		return err
+	}
+
+	for i := range publishers {
+		p := publishers[i]
+		if p.TwitchLive == "" && p.TwitchNotification == "" {
+			continue
+		}
+		if p.TwitchLive != "" && p.TwitchNotification == "" {
+			continue
+		}
+		log.Debug("notification: ", p.TwitchNotification)
+		if c.Config.DiscordWebhookEnabled {
+			log.Debug("sending discord notification: %s", p.TwitchNotification)
+			err := c.callWebhook(p.TwitchNotification)
+			if err != nil {
+				return err
+			}
+		}
+		if p.TwitchNotification != "" {
+			log.Debugf("resetting notification for %s (%s)\n", p.Name, p.TwitchStream)
+			err = c.setTwitchNotification(&p, "")
+			if err != nil {
+				return err
 			}
 		}
 	}
