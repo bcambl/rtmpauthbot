@@ -13,6 +13,7 @@ import (
 type Publisher struct {
 	Name               string `json:"name"`
 	Key                string `json:"key"`
+	LocalLive          string `json:"local_live"`
 	TwitchStream       string `json:"twitch_stream"`
 	TwitchLive         string `json:"twitch_live"`
 	TwitchNotification string `json:"twitch_notification"`
@@ -29,6 +30,15 @@ func (p *Publisher) IsValid() error {
 		err = errors.New("missing parameter: key")
 		return err
 	}
+	return nil
+}
+
+func (c *Controller) setLocalLive(p *Publisher, status string) error {
+	c.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("LocalLiveBucket"))
+		err := b.Put([]byte(p.Name), []byte(status))
+		return err
+	})
 	return nil
 }
 
@@ -59,7 +69,7 @@ func (c *Controller) setTwitchNotification(p *Publisher, notification string) er
 }
 
 func (c *Controller) getAllPublisher() ([]Publisher, error) {
-	var stream, live, notification []byte
+	var stream, localLive, twitchLive, notification []byte
 	publishers := []Publisher{}
 	c.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("PublisherBucket"))
@@ -76,13 +86,18 @@ func (c *Controller) getAllPublisher() ([]Publisher, error) {
 	for i := range publishers {
 		p := &publishers[i]
 		c.DB.View(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte("LocalLiveBucket"))
+			localLive = b.Get([]byte(p.Name))
+			return nil
+		})
+		c.DB.View(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte("TwitchStreamBucket"))
 			stream = b.Get([]byte(p.Name))
 			return nil
 		})
 		c.DB.View(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte("TwitchLiveBucket"))
-			live = b.Get([]byte(p.Name))
+			twitchLive = b.Get([]byte(p.Name))
 			return nil
 		})
 		c.DB.View(func(tx *bolt.Tx) error {
@@ -90,8 +105,9 @@ func (c *Controller) getAllPublisher() ([]Publisher, error) {
 			notification = b.Get([]byte(p.Name))
 			return nil
 		})
+		p.LocalLive = string(localLive)
 		p.TwitchStream = string(stream)
-		p.TwitchLive = string(live)
+		p.TwitchLive = string(twitchLive)
 		p.TwitchNotification = string(notification)
 	}
 
@@ -99,7 +115,7 @@ func (c *Controller) getAllPublisher() ([]Publisher, error) {
 }
 
 func (c *Controller) getPublisher(name string) (Publisher, error) {
-	var key, stream, live, notification []byte
+	var key, stream, localLive, twitchLive, notification []byte
 	p := Publisher{}
 	c.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("PublisherBucket"))
@@ -111,13 +127,18 @@ func (c *Controller) getPublisher(name string) (Publisher, error) {
 	}
 
 	c.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("LocalLiveBucket"))
+		localLive = b.Get([]byte(p.Name))
+		return nil
+	})
+	c.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("TwitchStreamBucket"))
 		stream = b.Get([]byte(name))
 		return nil
 	})
 	c.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("TwitchLiveBucket"))
-		live = b.Get([]byte(name))
+		twitchLive = b.Get([]byte(name))
 		return nil
 	})
 	c.DB.View(func(tx *bolt.Tx) error {
@@ -128,7 +149,8 @@ func (c *Controller) getPublisher(name string) (Publisher, error) {
 
 	p.Name = name
 	p.Key = string(key)
-	p.TwitchLive = string(live)
+	p.LocalLive = string(localLive)
+	p.TwitchLive = string(twitchLive)
 	p.TwitchStream = string(stream)
 	p.TwitchNotification = string(notification)
 
@@ -143,7 +165,14 @@ func (c *Controller) updatePublisher(p Publisher) error {
 		return err
 	})
 
+	c.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("LocalLiveBucket"))
+		err = b.Put([]byte(p.Name), []byte(p.LocalLive))
+		return err
+	})
+
 	if p.TwitchStream != "" {
+		// only update the stream if a value is provided
 		c.DB.Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte("TwitchStreamBucket"))
 			err = b.Put([]byte(p.Name), []byte(p.TwitchStream))
@@ -164,6 +193,7 @@ func (c *Controller) deletePublisher(name string) error {
 	log.Debug("deleting ", name)
 	buckets := []string{
 		"PublisherBucket",
+		"LocalLiveBucket",
 		"TwitchStreamBucket",
 		"TwitchLiveBucket",
 		"TwitchNotificationBucket",
@@ -199,6 +229,11 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 
 	serverFQDN := c.Config.ServerFQDN
 
+	err = c.setLocalLive(&p, "live")
+	if err != nil {
+		log.Error("error enabling local live status")
+	}
+
 	if c.Config.DiscordWebhookEnabled && (serverFQDN != "") {
 		content := fmt.Sprintf(":movie_camera: %s started streaming. vlc: `rtmp://%s/stream/%s`", streamName, serverFQDN, streamName)
 		err := c.callWebhook(content)
@@ -227,6 +262,11 @@ func (c *Controller) OnPublishDoneHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	log.Printf("on_publish_done authorized: %s with key: %s\n", p.Name, p.Key)
+
+	err = c.setLocalLive(&p, "")
+	if err != nil {
+		log.Error("error disabling local live status")
+	}
 
 	if c.Config.DiscordWebhookEnabled {
 		content := fmt.Sprintf(":black_medium_small_square: %s stopped streaming.", streamName)
