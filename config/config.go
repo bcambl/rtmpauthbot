@@ -32,7 +32,7 @@ func (c *Config) ParseEnv() error {
 	c.TwitchClientSecret = os.Getenv("TWITCH_CLIENT_SECRET")
 	c.DiscordWebhook = os.Getenv("DISCORD_WEBHOOK")
 	c.DiscordWebhookEnabled, err = strconv.ParseBool(os.Getenv("DISCORD_WEBHOOK_ENABLED"))
-	if err == nil {
+	if err != nil {
 		return err
 	}
 	c.TwitchEnabled, err = strconv.ParseBool(os.Getenv("TWITCH_ENABLED"))
