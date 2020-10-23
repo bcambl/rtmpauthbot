@@ -8,9 +8,10 @@ import (
 
 // Config contains config vars parsed from the environment
 type Config struct {
-	ServerIP              string
-	ServerPort            string
-	ServerFQDN            string
+	AuthServerIP          string
+	AuthServerPort        string
+	RTMPServerFQDN        string
+	RTMPServerPort        string
 	TwitchEnabled         bool
 	TwitchClientID        string
 	TwitchClientSecret    string
@@ -25,9 +26,10 @@ func (c *Config) ParseEnv() error {
 		err         error
 		pollRateSec int64
 	)
-	c.ServerIP = os.Getenv("SERVER_IP")
-	c.ServerPort = os.Getenv("SERVER_PORT")
-	c.ServerFQDN = os.Getenv("SERVER_FQDN")
+	c.AuthServerIP = os.Getenv("AUTH_SERVER_IP")
+	c.AuthServerPort = os.Getenv("AUTH_SERVER_PORT")
+	c.RTMPServerFQDN = os.Getenv("RTMP_SERVER_FQDN")
+	c.RTMPServerPort = os.Getenv("RTMP_SERVER_PORT")
 	c.TwitchClientID = os.Getenv("TWITCH_CLIENT_ID")
 	c.TwitchClientSecret = os.Getenv("TWITCH_CLIENT_SECRET")
 	c.DiscordWebhook = os.Getenv("DISCORD_WEBHOOK")

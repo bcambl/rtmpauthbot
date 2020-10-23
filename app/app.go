@@ -95,13 +95,13 @@ func Run() {
 	http.HandleFunc("/api/publisher", c.PublisherAPIHandler)
 
 	// if the listen address env variables are not set, set to sane default
-	if config.ServerIP == "" {
-		config.ServerIP = "127.0.0.1"
+	if config.AuthServerIP == "" {
+		config.AuthServerIP = "127.0.0.1"
 	}
-	if config.ServerPort == "" {
-		config.ServerPort = "9090"
+	if config.AuthServerPort == "" {
+		config.AuthServerPort = "9090"
 	}
-	listenAddress := fmt.Sprintf("%s:%s", config.ServerIP, config.ServerPort)
+	listenAddress := fmt.Sprintf("%s:%s", config.AuthServerIP, config.AuthServerPort)
 
 	// Serve
 	log.Infof("starting rtmpauth server on %s", listenAddress)

@@ -170,7 +170,7 @@ func streamQueryURL(publishers []Publisher) (string, error) {
 		return "", err
 	}
 
-	log.Debug("stream userQuery: ", userQuery)
+	//log.Debug("stream userQuery: ", userQuery)
 	return "https://api.twitch.tv/helix/streams/?" + userQuery, nil
 }
 

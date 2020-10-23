@@ -227,7 +227,8 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("on_publish authorized: %s with key: %s\n", p.Name, p.Key)
 
-	serverFQDN := c.Config.ServerFQDN
+	serverFQDN := c.Config.RTMPServerFQDN
+	serverPort := c.Config.RTMPServerPort
 
 	err = c.setLocalLive(&p, "live")
 	if err != nil {
@@ -235,7 +236,7 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c.Config.DiscordWebhookEnabled && (serverFQDN != "") {
-		content := fmt.Sprintf(":movie_camera: %s started streaming. vlc: `rtmp://%s/stream/%s`", streamName, serverFQDN, streamName)
+		content := fmt.Sprintf(":movie_camera: %s started streaming. vlc: `rtmp://%s:%s/stream/%s`", streamName, serverFQDN, serverPort, streamName)
 		err := c.callWebhook(content)
 		if err != nil {
 			log.Error(err)
