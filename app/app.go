@@ -34,7 +34,7 @@ func init() {
 	bucketList := []string{
 		"ConfigBucket",             // General configuration & caching
 		"PublisherBucket",          // Local publishers -> rtmp stream keys
-		"LocalLiveBucket",          // Local publishers -> rtmp live stream status
+		"RTMPLiveBucket",           // Local publishers -> rtmp live stream status
 		"TwitchStreamBucket",       // Local publishers -> twitch stream names
 		"TwitchLiveBucket",         // Local publishers -> twitch live stream status
 		"TwitchNotificationBucket", // Local publishers -> twitch notification state

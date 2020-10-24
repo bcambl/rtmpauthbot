@@ -13,10 +13,10 @@ import (
 type Publisher struct {
 	Name               string `json:"name"`
 	Key                string `json:"key"`
-	LocalLive          string `json:"local_live"`
+	RTMPLive           string `json:"rtmp_live"`
 	TwitchStream       string `json:"twitch_stream"`
 	TwitchLive         string `json:"twitch_live"`
-	TwitchNotification string `json:"twitch_notification"`
+	TwitchNotification string `json:"-"`
 }
 
 // IsValid perform basic validations on a publisher record
@@ -35,7 +35,7 @@ func (p *Publisher) IsValid() error {
 
 func (c *Controller) setLocalLive(p *Publisher, status string) error {
 	c.DB.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("LocalLiveBucket"))
+		b := tx.Bucket([]byte("RTMPLiveBucket"))
 		err := b.Put([]byte(p.Name), []byte(status))
 		return err
 	})
@@ -69,7 +69,7 @@ func (c *Controller) setTwitchNotification(p *Publisher, notification string) er
 }
 
 func (c *Controller) getAllPublisher() ([]Publisher, error) {
-	var stream, localLive, twitchLive, notification []byte
+	var stream, rtmpLive, twitchLive, notification []byte
 	publishers := []Publisher{}
 	c.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("PublisherBucket"))
@@ -86,8 +86,8 @@ func (c *Controller) getAllPublisher() ([]Publisher, error) {
 	for i := range publishers {
 		p := &publishers[i]
 		c.DB.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte("LocalLiveBucket"))
-			localLive = b.Get([]byte(p.Name))
+			b := tx.Bucket([]byte("RTMPLiveBucket"))
+			rtmpLive = b.Get([]byte(p.Name))
 			return nil
 		})
 		c.DB.View(func(tx *bolt.Tx) error {
@@ -105,7 +105,7 @@ func (c *Controller) getAllPublisher() ([]Publisher, error) {
 			notification = b.Get([]byte(p.Name))
 			return nil
 		})
-		p.LocalLive = string(localLive)
+		p.RTMPLive = string(rtmpLive)
 		p.TwitchStream = string(stream)
 		p.TwitchLive = string(twitchLive)
 		p.TwitchNotification = string(notification)
@@ -115,7 +115,7 @@ func (c *Controller) getAllPublisher() ([]Publisher, error) {
 }
 
 func (c *Controller) getPublisher(name string) (Publisher, error) {
-	var key, stream, localLive, twitchLive, notification []byte
+	var key, stream, rtmpLive, twitchLive, notification []byte
 	p := Publisher{}
 	c.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("PublisherBucket"))
@@ -127,8 +127,8 @@ func (c *Controller) getPublisher(name string) (Publisher, error) {
 	}
 
 	c.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("LocalLiveBucket"))
-		localLive = b.Get([]byte(p.Name))
+		b := tx.Bucket([]byte("RTMPLiveBucket"))
+		rtmpLive = b.Get([]byte(p.Name))
 		return nil
 	})
 	c.DB.View(func(tx *bolt.Tx) error {
@@ -149,7 +149,7 @@ func (c *Controller) getPublisher(name string) (Publisher, error) {
 
 	p.Name = name
 	p.Key = string(key)
-	p.LocalLive = string(localLive)
+	p.RTMPLive = string(rtmpLive)
 	p.TwitchLive = string(twitchLive)
 	p.TwitchStream = string(stream)
 	p.TwitchNotification = string(notification)
@@ -165,11 +165,12 @@ func (c *Controller) updatePublisher(p Publisher) error {
 		return err
 	})
 
-	c.DB.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("LocalLiveBucket"))
-		err = b.Put([]byte(p.Name), []byte(p.LocalLive))
-		return err
-	})
+	// debug only. live status is managed internally
+	// c.DB.Update(func(tx *bolt.Tx) error {
+	// 	b := tx.Bucket([]byte("RTMPLiveBucket"))
+	// 	err = b.Put([]byte(p.Name), []byte(p.LocalLive))
+	// 	return err
+	// })
 
 	if p.TwitchStream != "" {
 		// only update the stream if a value is provided
@@ -180,11 +181,12 @@ func (c *Controller) updatePublisher(p Publisher) error {
 		})
 	}
 
-	c.DB.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("TwitchLiveBucket"))
-		err = b.Put([]byte(p.Name), []byte(p.TwitchLive))
-		return err
-	})
+	// debug only. live status is managed internally
+	// c.DB.Update(func(tx *bolt.Tx) error {
+	// 	b := tx.Bucket([]byte("TwitchLiveBucket"))
+	// 	err = b.Put([]byte(p.Name), []byte(p.TwitchLive))
+	// 	return err
+	// })
 
 	return nil
 }
@@ -193,7 +195,7 @@ func (c *Controller) deletePublisher(name string) error {
 	log.Debug("deleting ", name)
 	buckets := []string{
 		"PublisherBucket",
-		"LocalLiveBucket",
+		"RTMPLiveBucket",
 		"TwitchStreamBucket",
 		"TwitchLiveBucket",
 		"TwitchNotificationBucket",
@@ -202,7 +204,6 @@ func (c *Controller) deletePublisher(name string) error {
 		c.DB.Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte(buckets[i]))
 			err := b.Delete([]byte(name))
-			log.Debug(err)
 			return err
 		})
 	}
