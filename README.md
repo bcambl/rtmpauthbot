@@ -6,6 +6,8 @@ _rtmpauth_ is an authentication & notification system to be used along side the 
 _rtmpauth_ project was built to serve the needs of a small Discord community to allow high quality video streaming to a private rtmp server to remain social during the COVID-19 pandemic. When a member starts streaming, a notification is posted in discord as well as when the stream gains or loses a viewer.  
 Each member may also have a twitch channel configured in _rtmpauth_ which differs from their discord/publisher user name. When a twitch channel is defined for a member, notifications will be posted when the twitch stream is live/off-line. This functionality can also serve as general twitch notifications for favorite streamers of the discord community.
 
+_rtmpauth_ was started in May 2020 then made public and developed open source throughout October 2020 as part Hacktoberfest. With many open source projects being assaulted with useless _spam_ contributions in attempt to cheat a free Hacktoberfest t-shirt, I wanted to contribute something this year that exceeds the minimum _"4 lines of code/documentation"_ requirement. Hopefully in the future Hacktoberfest will find a way determine quality contributions to open source, but for this year I hope this effort is valid and recognized.
+
 ## Features
 - Simple authentication for NGiNX RTMP module
 - Discord channel notifications via webhook
