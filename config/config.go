@@ -2,8 +2,11 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Config contains config vars parsed from the environment
@@ -18,6 +21,14 @@ type Config struct {
 	DiscordWebhook     string
 	DiscordEnabled     bool
 	TwitchPollRate     time.Duration
+}
+
+// DatabasePath returns the path to the database
+func DatabasePath() string {
+	pathToDB := os.Getenv("DATA_PATH")
+	fullDBPath := filepath.Join(pathToDB, "rtmpauth.db")
+	log.Debug("Using database path: ", fullDBPath)
+	return fullDBPath
 }
 
 // ParseEnv parses configurations from environment environment variables
