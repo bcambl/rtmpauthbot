@@ -105,6 +105,8 @@ func Run() {
 
 	// Serve
 	log.Infof("starting rtmpauth server on %s", listenAddress)
-	http.ListenAndServe(listenAddress, nil)
-
+	err = http.ListenAndServe(listenAddress, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
