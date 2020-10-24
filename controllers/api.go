@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -20,7 +21,7 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 		if !ok || len(name[0]) < 1 {
 			publishers, err := c.getAllPublisher()
 			if err != nil {
-				log.Debug(err)
+				log.Debug("error retrieving all publishers: ", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -38,7 +39,7 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 		n := name[0]
 		p, err := c.getPublisher(n)
 		if err != nil {
-			log.Debug(err)
+			log.Debugf("error retrieving publisher '%s': %s\n", p.Name, err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -55,9 +56,16 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 
 	// API POST REQUESTS
 	if r.Method == "POST" {
-		err := json.NewDecoder(r.Body).Decode(&p)
+
+		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			log.Debug(err)
+			log.Debug("error reading POST body: ", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		err = json.Unmarshal(body, &p)
+		if err != nil {
+			log.Debug("error unmarshaling body json: ", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -69,35 +77,46 @@ func (c *Controller) PublisherAPIHandler(w http.ResponseWriter, r *http.Request)
 		}
 		err = c.updatePublisher(p)
 		if err != nil {
+			log.Debugf("error updating publisher '%s': %s\n", p.Name, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		log.Infof("updating publisher %s", p.Name)
+		log.Infof("publisher updated: %s", p.Name)
 		w.WriteHeader(http.StatusCreated)
 		return
 	}
 
 	// API DELETE REQUESTS
 	if r.Method == "DELETE" {
-		err := json.NewDecoder(r.Body).Decode(&p)
+		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
+			log.Debug("error reading DELETE body: ", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		err = json.Unmarshal(body, &p)
+		if err != nil {
+			log.Debug("error unmarshaling body json: ", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		_, err = c.getPublisher(p.Name)
 		if err != nil {
+			log.Debugf("error retrieving publisher for deletion '%s': %s\n", p.Name, err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		err = c.deletePublisher(p.Name)
 		if err != nil {
+			log.Debugf("error deleting publisher '%s': %s\n", p.Name, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		log.Infof("deleting publisher %s", p.Name)
+		log.Infof("publisher deleted: %s", p.Name)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
+	log.Debug(http.StatusNotImplemented)
 	w.WriteHeader(http.StatusNotImplemented)
 	return
 }
