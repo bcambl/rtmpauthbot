@@ -300,7 +300,7 @@ func (c *Controller) processNotifications() error {
 			continue
 		}
 		log.Debug("notification: ", p.TwitchNotification)
-		if c.Config.DiscordWebhookEnabled {
+		if c.Config.DiscordEnabled {
 			log.Debug("sending discord notification: %s", p.TwitchNotification)
 			err := c.callWebhook(p.TwitchNotification)
 			if err != nil {

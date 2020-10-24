@@ -235,7 +235,7 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 		log.Error("error enabling local live status")
 	}
 
-	if c.Config.DiscordWebhookEnabled && (serverFQDN != "") {
+	if c.Config.DiscordEnabled && (serverFQDN != "") {
 		content := fmt.Sprintf(":movie_camera: %s started streaming. vlc: `rtmp://%s:%s/stream/%s`", streamName, serverFQDN, serverPort, streamName)
 		err := c.callWebhook(content)
 		if err != nil {
@@ -269,7 +269,7 @@ func (c *Controller) OnPublishDoneHandler(w http.ResponseWriter, r *http.Request
 		log.Error("error disabling local live status")
 	}
 
-	if c.Config.DiscordWebhookEnabled {
+	if c.Config.DiscordEnabled {
 		content := fmt.Sprintf(":black_medium_small_square: %s stopped streaming.", streamName)
 		err := c.callWebhook(content)
 		if err != nil {

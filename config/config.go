@@ -8,16 +8,16 @@ import (
 
 // Config contains config vars parsed from the environment
 type Config struct {
-	AuthServerIP          string
-	AuthServerPort        string
-	RTMPServerFQDN        string
-	RTMPServerPort        string
-	TwitchEnabled         bool
-	TwitchClientID        string
-	TwitchClientSecret    string
-	DiscordWebhook        string
-	DiscordWebhookEnabled bool
-	TwitchPollRate        time.Duration
+	AuthServerIP       string
+	AuthServerPort     string
+	RTMPServerFQDN     string
+	RTMPServerPort     string
+	TwitchEnabled      bool
+	TwitchClientID     string
+	TwitchClientSecret string
+	DiscordWebhook     string
+	DiscordEnabled     bool
+	TwitchPollRate     time.Duration
 }
 
 // ParseEnv parses configurations from environment environment variables
@@ -33,7 +33,7 @@ func (c *Config) ParseEnv() error {
 	c.TwitchClientID = os.Getenv("TWITCH_CLIENT_ID")
 	c.TwitchClientSecret = os.Getenv("TWITCH_CLIENT_SECRET")
 	c.DiscordWebhook = os.Getenv("DISCORD_WEBHOOK")
-	c.DiscordWebhookEnabled, err = strconv.ParseBool(os.Getenv("DISCORD_WEBHOOK_ENABLED"))
+	c.DiscordEnabled, err = strconv.ParseBool(os.Getenv("DISCORD_ENABLED"))
 	if err != nil {
 		return err
 	}
