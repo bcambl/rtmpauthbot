@@ -46,13 +46,13 @@ func (c *Config) ParseEnv() error {
 	c.DiscordWebhook = os.Getenv("DISCORD_WEBHOOK")
 	c.DiscordEnabled, err = strconv.ParseBool(os.Getenv("DISCORD_ENABLED"))
 	if err != nil {
+		c.DiscordEnabled = false
 		log.Debug("error parsing env var: DISCORD_ENABLED")
-		return err
 	}
 	c.TwitchEnabled, err = strconv.ParseBool(os.Getenv("TWITCH_ENABLED"))
 	if err != nil {
+		c.TwitchEnabled = false
 		log.Debug("error parsing env var: TWITCH_ENABLED")
-		return err
 	}
 	pollRateSec, err = strconv.ParseInt(os.Getenv("TWITCH_POLL_RATE"), 0, 0)
 	if err != nil {
