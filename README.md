@@ -1,5 +1,6 @@
 RTMPAuthd
-========+
+=========
+
 RTMPAuthd is an authentication & notification system to be used along side the nginx rtmp module.
 
 ## Background
