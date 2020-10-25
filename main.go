@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/bcambl/rtmpauth/app"
+	"github.com/bcambl/rtmpauthd/app"
 )
 
 func main() {

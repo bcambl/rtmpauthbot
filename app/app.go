@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/bcambl/rtmpauth/config"
-	"github.com/bcambl/rtmpauth/controllers"
+	"github.com/bcambl/rtmpauthd/config"
+	"github.com/bcambl/rtmpauthd/controllers"
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 )
@@ -104,7 +104,7 @@ func Run() {
 	listenAddress := fmt.Sprintf("%s:%s", conf.AuthServerIP, conf.AuthServerPort)
 
 	// Serve
-	log.Infof("starting rtmpauth server on %s", listenAddress)
+	log.Infof("starting rtmpauthd server on %s", listenAddress)
 	err = http.ListenAndServe(listenAddress, nil)
 	if err != nil {
 		log.Fatal(err)

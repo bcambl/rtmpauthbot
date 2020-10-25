@@ -26,7 +26,7 @@ type Config struct {
 // DatabasePath returns the path to the database
 func DatabasePath() string {
 	pathToDB := os.Getenv("DATA_PATH")
-	fullDBPath := filepath.Join(pathToDB, "rtmpauth.db")
+	fullDBPath := filepath.Join(pathToDB, "rtmpauthd.db")
 	log.Debug("Using database path: ", fullDBPath)
 	return fullDBPath
 }

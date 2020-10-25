@@ -1,4 +1,4 @@
-module github.com/bcambl/rtmpauth
+module github.com/bcambl/rtmpauthd
 
 go 1.14
 
