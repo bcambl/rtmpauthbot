@@ -25,7 +25,7 @@ func init() {
 	log.SetLevel(logLevel)
 
 	// Initialize the database
-	db, err := bolt.Open("rtmpauth.db", 0700, nil)
+	db, err := bolt.Open(config.DatabasePath(), 0700, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func init() {
 	bucketList := []string{
 		"ConfigBucket",             // General configuration & caching
 		"PublisherBucket",          // Local publishers -> rtmp stream keys
-		"LocalLiveBucket",          // Local publishers -> rtmp live stream status
+		"RTMPLiveBucket",           // Local publishers -> rtmp live stream status
 		"TwitchStreamBucket",       // Local publishers -> twitch stream names
 		"TwitchLiveBucket",         // Local publishers -> twitch live stream status
 		"TwitchNotificationBucket", // Local publishers -> twitch notification state
@@ -55,19 +55,19 @@ func init() {
 // Run performs setup and starts the server.
 func Run() {
 
-	var config config.Config
-	err := config.ParseEnv()
+	var conf config.Config
+	err := conf.ParseEnv()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	db, err := bolt.Open("rtmpauth.db", 0700, nil)
+	db, err := bolt.Open(config.DatabasePath(), 0700, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	c := controllers.Controller{Config: &config, DB: db}
+	c := controllers.Controller{Config: &conf, DB: db}
 
 	// Start Twitch polling scheduler if integration is enabled
 	if c.Config.TwitchEnabled {
@@ -95,16 +95,18 @@ func Run() {
 	http.HandleFunc("/api/publisher", c.PublisherAPIHandler)
 
 	// if the listen address env variables are not set, set to sane default
-	if config.AuthServerIP == "" {
-		config.AuthServerIP = "127.0.0.1"
+	if conf.AuthServerIP == "" {
+		conf.AuthServerIP = "127.0.0.1"
 	}
-	if config.AuthServerPort == "" {
-		config.AuthServerPort = "9090"
+	if conf.AuthServerPort == "" {
+		conf.AuthServerPort = "9090"
 	}
-	listenAddress := fmt.Sprintf("%s:%s", config.AuthServerIP, config.AuthServerPort)
+	listenAddress := fmt.Sprintf("%s:%s", conf.AuthServerIP, conf.AuthServerPort)
 
 	// Serve
 	log.Infof("starting rtmpauth server on %s", listenAddress)
-	http.ListenAndServe(listenAddress, nil)
-
+	err = http.ListenAndServe(listenAddress, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
