@@ -257,7 +257,7 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 			}
 			if !live {
 				c.setTwitchLive(p, "")
-				notification := fmt.Sprintf("%s is no longer live on twitch", p.TwitchStream)
+				notification := fmt.Sprintf("%s is no longer live on twitch", p.Name)
 				c.setTwitchNotification(p, notification)
 			}
 		}
@@ -274,7 +274,8 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 			if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
 				if !p.IsTwitchLive() {
 					c.setTwitchLive(p, s.Type)
-					notification := fmt.Sprintf("%s is live on twitch: %s", p.TwitchStream, s.Title)
+					streamLink := fmt.Sprintf("http://twitch.tv/%s", p.TwitchStream)
+					notification := fmt.Sprintf("%s is live on twitch - %s - %s", p.Name, s.Title, streamLink)
 					c.setTwitchNotification(p, notification)
 				}
 			}
