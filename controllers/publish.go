@@ -217,16 +217,16 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 	streamKey := r.Form.Get("key")
 	p, err := c.getPublisher(streamName)
 	if err != nil {
-		log.Warnf("on_publish unauthorized: %s\n", err)
+		log.Warnf("on_publish unauthorized: %s", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	if streamKey != p.Key {
-		log.Warnf("on_publish unauthorized: %s with 'key': %s\n", p.Name, streamKey)
+		log.Warnf("on_publish unauthorized: %s with 'key': %s", p.Name, streamKey)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	log.Printf("on_publish authorized: %s with key: %s\n", p.Name, p.Key)
+	log.Printf("on_publish authorized: %s", p.Name)
 
 	serverFQDN := c.Config.RTMPServerFQDN
 	serverPort := c.Config.RTMPServerPort
@@ -254,16 +254,16 @@ func (c *Controller) OnPublishDoneHandler(w http.ResponseWriter, r *http.Request
 	streamKey := r.Form.Get("key")
 	p, err := c.getPublisher(streamName)
 	if err != nil {
-		log.Warnf("on_publish_done unauthorized: %s with key: %s\n", p.Name, p.Key)
+		log.Warnf("on_publish_done unauthorized: %s", p.Name)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	if streamKey != p.Key {
-		log.Warnf("on_publish_done unauthorized: %s with key: %s\n", p.Name, p.Key)
+		log.Warnf("on_publish_done unauthorized: %s with key: %s", p.Name, p.Key)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	log.Printf("on_publish_done authorized: %s with key: %s\n", p.Name, p.Key)
+	log.Printf("on_publish_done authorized: %s", p.Name)
 
 	err = c.setLocalLive(&p, "")
 	if err != nil {

@@ -15,25 +15,27 @@ Each member may also have a twitch channel configured in RTMPAuthd which differs
 - Embedded database
 - Single binary deployment
 
-## Installation
-Installation documentation WIP
-
-TL;DR - compile project to a binary and either setup as a service with systemd or deploy the project in a container. Ensure all environment variables are configured in the next section of this document.
-
 ## Configuration
 The project is configured with environment variables. All required exported variables are provided with defaults in `init/rtmpauthd.env`.
 
 1. Create a local copy of the file
     ```
-    mkdir .local
-    cp init/rtmpauthd.env .local/rtmpauthd.env
+    mkdir /etc/rtmpauthd
+    rtmpauthd -environment > /etc/rtmpauthd/rtmpauthd.env
     ```
 2. Update the variables to suit your needs
 
-3. Source the file
-    ```
-    source .local/rtmpauthd.env
-    ```
+## Install Service
+Installation documentation WIP
+
+TL;DR - compile project to a binary and either setup as a service with systemd or deploy the project in a container. Ensure all environment variables are configured from the previous section of this document.
+
+
+A basic systemd unit-file can be generated with the following command
+```
+rtmpauthd -unitfile > /etc/systemd/system/rtmpauthd.service
+systemctl daemon-reload
+```
 
 ## Managing RTMP Publishers
 User management can be performed with some basic REST calls. You can build a custom application around the API or you can simply interact with via your favorite REST client. For the sake of simplicity, the following examples will be demonstrated using the `curl` command.
