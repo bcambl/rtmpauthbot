@@ -1,15 +1,15 @@
-RTMPAuthd
+rtmpauthd
 =========
 
-RTMPAuthd is an authentication & notification system to be used along side the nginx rtmp module.
+`rtmpauthd` is an authentication & notification system to be used along side the nginx rtmp module.
 
 ## Background
-RTMPAuthd project was built to serve the needs of a small Discord community to allow high quality video streaming to a private rtmp server to remain social during the COVID-19 pandemic. When a member starts streaming, a notification is posted in discord as well as when the stream gains or loses a viewer.  
-Each member may also have a twitch channel configured in RTMPAuthd which differs from their discord/publisher user name. When a twitch channel is defined for a member, notifications will be posted when the twitch stream is live/off-line. This functionality can also serve as general twitch notifications for favorite streamers of the discord community.
+`rtmpauthd` project was built to serve the needs of a small Discord community to allow high quality video streaming to a private rtmp server to remain social during the COVID-19 pandemic. Notifications will be posted to Discord When a member starts streaming, as well as notifications when a rtmp stream gains or loses a viewer.  
+Each member may also have a twitch channel configured in `rtmpauthd` which differs from their discord/publisher user name. When a twitch channel is defined for a member, notifications will be posted when the twitch stream is live/off-line. This functionality can also serve as general twitch notifications for favorite streamers of the discord community.
 
 ## Features
-- Simple authentication for NGiNX RTMP module
-- Discord channel notifications via webhook
+- Authentication system for NGiNX RTMP module
+- Discord channel notifications
 - Twitch stream notifications
 - HTTP REST user management
 - Embedded database
@@ -28,7 +28,7 @@ The project is configured with environment variables.
 ## Install Service
 Installation documentation WIP
 
-TL;DR - compile project to a binary and either setup as a service with systemd or deploy the project in a container. Ensure all environment variables are configured from the previous section of this document.
+TL;DR - compile project to a binary and either setup as a service with `systemd` or deploy the project in a container. Ensure all environment variables are configured from the previous section of this document.
 
 
 A basic systemd unit-file can be generated with the following command
@@ -38,8 +38,7 @@ systemctl daemon-reload
 ```
 
 ## Managing RTMP Publishers
-User management can be performed with some basic REST calls. You can build a custom application around the API or you can simply interact with via your favorite REST client. For the sake of simplicity, the following examples will be demonstrated using the `curl` command.
-NOTE: The primary key for all records in database is the publisher _name_ (discord user name)
+User management can be performed with some basic REST calls. You can either interact with `rtmpauthd` using your favorite REST client or build a custom application around the API. For the sake of simplicity, the following examples will be demonstrated using the `curl` command.  
 
 ### Adding/Updating a publisher
 ```
@@ -97,4 +96,4 @@ GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o rtmpauthd main.go
 ```
 
 ## Security considerations
-While it is possible to run this service on a different host, it is intended to run on the same host/container pod as nginx and communicate via localhost. Due to this assumption, the rtmpauthd service should NOT be publicly accessible or firewall rules should be configured to only allow connection from the nginx host/container.
+While it is possible to run this service on a different host, it is intended to run on the same host/container pod as nginx and communicate via localhost. Due to this assumption, the `rtmpauthd` service should NOT be publicly accessible or firewall rules should be configured to only allow connection from the nginx host/container.
