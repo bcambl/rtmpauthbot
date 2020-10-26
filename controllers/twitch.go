@@ -308,7 +308,7 @@ func (c *Controller) processNotifications() error {
 			}
 		}
 		if p.TwitchNotification != "" {
-			log.Debugf("resetting notification for %s (%s)\n", p.Name, p.TwitchStream)
+			log.Debugf("resetting notification for %s (%s)", p.Name, p.TwitchStream)
 			err = c.setTwitchNotification(&p, "")
 			if err != nil {
 				return err
