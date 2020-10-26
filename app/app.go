@@ -15,7 +15,23 @@ import (
 
 func init() {
 	debugFlag := flag.Bool("debug", false, "enable debug logging")
+	envVarsFlag := flag.Bool("environment", false, "print environment variables with defaults")
+	licenseFlag := flag.Bool("license", false, "print project license")
+	unitFileFlag := flag.Bool("unitfile", false, "print a systemd unit-file template")
 	flag.Parse()
+
+	if *licenseFlag {
+		config.PrintLicense()
+		os.Exit(0)
+	}
+	if *envVarsFlag {
+		config.PrintEnv()
+		os.Exit(0)
+	}
+	if *unitFileFlag {
+		config.PrintSystemDUnit()
+		os.Exit(0)
+	}
 
 	logLevel := log.InfoLevel
 	if *debugFlag {
