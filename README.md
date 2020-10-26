@@ -16,9 +16,9 @@ Each member may also have a twitch channel configured in RTMPAuthd which differs
 - Single binary deployment
 
 ## Configuration
-The project is configured with environment variables. All required exported variables are provided with defaults in `init/rtmpauthd.env`.
+The project is configured with environment variables.
 
-1. Create a local copy of the file
+1. Create a local copy of the environment variable file
     ```
     mkdir /etc/rtmpauthd
     rtmpauthd -environment > /etc/rtmpauthd/rtmpauthd.env
