@@ -237,7 +237,7 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c.Config.DiscordEnabled && (serverFQDN != "") {
-		content := fmt.Sprintf(":movie_camera: %s started streaming. vlc: `rtmp://%s:%s/stream/%s`", streamName, serverFQDN, serverPort, streamName)
+		content := fmt.Sprintf(":movie_camera: %s started a private stream!\nwatch now: `rtmp://%s:%s/stream/%s`", streamName, serverFQDN, serverPort, streamName)
 		err := c.callWebhook(content)
 		if err != nil {
 			log.Error(err)
@@ -271,7 +271,7 @@ func (c *Controller) OnPublishDoneHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if c.Config.DiscordEnabled {
-		content := fmt.Sprintf(":black_medium_small_square: %s stopped streaming.", streamName)
+		content := fmt.Sprintf(":checkered_flag:  %s finished streaming.", streamName)
 		err := c.callWebhook(content)
 		if err != nil {
 			log.Error(err)

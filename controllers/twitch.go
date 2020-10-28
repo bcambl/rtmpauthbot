@@ -257,7 +257,7 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 			}
 			if !live {
 				c.setTwitchLive(p, "")
-				notification := fmt.Sprintf("%s is no longer live on twitch", p.Name)
+				notification := fmt.Sprintf(":checkered_flag: %s finished streaming on twitch", p.Name)
 				c.setTwitchNotification(p, notification)
 			}
 		}
@@ -275,7 +275,7 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 				if !p.IsTwitchLive() {
 					c.setTwitchLive(p, s.Type)
 					streamLink := fmt.Sprintf("http://twitch.tv/%s", p.TwitchStream)
-					notification := fmt.Sprintf("%s is live on twitch - %s - %s", p.Name, s.Title, streamLink)
+					notification := fmt.Sprintf(":movie_camera: %s started a public stream on twitch!\ntitle: %s\nwatch now: `%s`", p.Name, s.Title, streamLink)
 					c.setTwitchNotification(p, notification)
 				}
 			}
