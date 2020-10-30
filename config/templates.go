@@ -71,14 +71,14 @@ TWITCH_POLL_RATE="60"
 `
 	systemdUnit = `
 [Unit]
-Description=rtmpauthd rtmp authentication server
+Description=rtmpauthbot rtmp authentication server
 
 [Service]
-EnvironmentFile=/etc/rtmpauthd/rtmpauthd.env
+EnvironmentFile=/etc/rtmpauthbot/rtmpauthbot.env
 Type=simple
 User=nginx
 WorkingDirectory=/var/cache/nginx
-ExecStart=/usr/local/bin/rtmpauthd
+ExecStart=/usr/local/bin/rtmpauthbot
 
 [Install]
 WantedBy=multi-user.target
