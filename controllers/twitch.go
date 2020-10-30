@@ -274,7 +274,7 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 			if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
 				if !p.IsTwitchLive() {
 					c.setTwitchLive(p, s.Type)
-					streamLink := fmt.Sprintf("http://twitch.tv/%s", p.TwitchStream)
+					streamLink := fmt.Sprintf("https://twitch.tv/%s", p.TwitchStream)
 					notification := fmt.Sprintf(":movie_camera: %s started a public stream on twitch!\ntitle: %s\nwatch now: `%s`", p.Name, s.Title, streamLink)
 					c.setTwitchNotification(p, notification)
 				}
