@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/bcambl/rtmpauthd/config"
+	"github.com/bcambl/rtmpauthbot/config"
 	bolt "go.etcd.io/bbolt"
 )
 

@@ -1,11 +1,11 @@
-rtmpauthd
+rtmpauthbot
 =========
 
-`rtmpauthd` is an authentication & notification system to be used along side the nginx rtmp module.
+`rtmpauthbot` is an authentication & notification system to be used along side the nginx rtmp module.
 
 ## Background
-`rtmpauthd` project was built to serve the needs of a small Discord community to allow high quality video streaming to a private rtmp server to remain social during the COVID-19 pandemic. Notifications will be posted to Discord When a member starts streaming, as well as notifications when a rtmp stream gains or loses a viewer.  
-Each member may also have a twitch channel configured in `rtmpauthd` which differs from their discord/publisher user name. When a twitch channel is defined for a member, notifications will be posted when the twitch stream is live/off-line. This functionality can also serve as general twitch notifications for favorite streamers of the discord community.
+`rtmpauthbot` project was built to serve the needs of a small Discord community to allow high quality video streaming to a private rtmp server to remain social during the COVID-19 pandemic. Notifications will be posted to Discord When a member starts streaming, as well as notifications when a rtmp stream gains or loses a viewer.  
+Each member may also have a twitch channel configured in `rtmpauthbot` which differs from their discord/publisher user name. When a twitch channel is defined for a member, notifications will be posted when the twitch stream is live/off-line. This functionality can also serve as general twitch notifications for favorite streamers of the discord community.
 
 ## Features
 - Authentication system for NGiNX RTMP module
@@ -20,8 +20,8 @@ The project is configured with environment variables.
 
 1. Create a local copy of the environment variable file
     ```
-    mkdir /etc/rtmpauthd
-    rtmpauthd -environment > /etc/rtmpauthd/rtmpauthd.env
+    mkdir /etc/rtmpauthbot
+    rtmpauthbot -environment > /etc/rtmpauthbot/rtmpauthbot.env
     ```
 2. Update the variables to suit your needs
 
@@ -33,12 +33,12 @@ TL;DR - compile project to a binary and either setup as a service with `systemd`
 
 A basic systemd unit-file can be generated with the following command
 ```
-rtmpauthd -unitfile > /etc/systemd/system/rtmpauthd.service
+rtmpauthbot -unitfile > /etc/systemd/system/rtmpauthbot.service
 systemctl daemon-reload
 ```
 
 ## Managing RTMP Publishers
-User management can be performed with some basic REST calls. You can either interact with `rtmpauthd` using your favorite REST client or build a custom application around the API. For the sake of simplicity, the following examples will be demonstrated using the `curl` command.  
+User management can be performed with some basic REST calls. You can either interact with `rtmpauthbot` using your favorite REST client or build a custom application around the API. For the sake of simplicity, the following examples will be demonstrated using the `curl` command.  
 
 ### Adding/Updating a publisher
 ```
@@ -92,8 +92,8 @@ expected response status code: `204`
 ## Build From Source
 If you would rather compile the project from source, please install the latest version of the Go programming language  [here](https://golang.org/dl/).
 ```
-GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o rtmpauthd main.go
+GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o rtmpauthbot main.go
 ```
 
 ## Security considerations
-While it is possible to run this service on a different host, it is intended to run on the same host/container pod as nginx and communicate via localhost. Due to this assumption, the `rtmpauthd` service should NOT be publicly accessible or firewall rules should be configured to only allow connection from the nginx host/container.
+While it is possible to run this service on a different host, it is intended to run on the same host/container pod as nginx and communicate via localhost. Due to this assumption, the `rtmpauthbot` service should NOT be publicly accessible or firewall rules should be configured to only allow connection from the nginx host/container.
