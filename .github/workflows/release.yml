@@ -12,8 +12,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GOARCH: amd64
         GOOS: linux
-  release-linux-arm7:
-    name: release linux/arm7
+  release-linux-arm64:
+    name: release linux/arm64
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -21,6 +21,5 @@ jobs:
       uses: bcambl/go-release.action@v1.0.7
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GOARCH: arm
+        GOARCH: arm64
         GOOS: linux
-        GOARM: "7"
