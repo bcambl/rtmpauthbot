@@ -7,19 +7,21 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: compile and release
-      uses: bcambl/go-release.action@v1.0.7
+      uses: bcambl/go-release.action@v1.0.8
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GOARCH: amd64
         GOOS: linux
+        CGO_ENABLED: 0
   release-linux-arm64:
     name: release linux/arm64
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
     - name: compile and release
-      uses: bcambl/go-release.action@v1.0.7
+      uses: bcambl/go-release.action@v1.0.8
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GOARCH: arm64
         GOOS: linux
+        CGO_ENABLED: 0
