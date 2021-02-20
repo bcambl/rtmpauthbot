@@ -38,6 +38,18 @@ type StreamData struct {
 	StartedAt   string `json:"started_at"`
 }
 
+// TwitchGamesResponse to marshal the json response from /helix/games/
+type TwitchGamesResponse struct {
+	Data []GameData `json:"data"`
+}
+
+// GameData to marshal the inner data of
+type GameData struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	BoxArtURL string `json:"box_art_url"`
+}
+
 // retrieve cached twitch access token from database and set in the
 // Config struct. This is only called when the token is not set in Config
 func (c *Controller) getCachedAccessToken() (string, error) {
@@ -236,6 +248,59 @@ func (c *Controller) getStreams() ([]StreamData, error) {
 	return streamResponse.Data, nil
 }
 
+func (c *Controller) getGame(gameID string) (GameData, error) {
+
+	var (
+		err        error
+		gamesQuery string
+		g          GameData
+	)
+
+	err = c.validateClientCredentials()
+	if err != nil {
+		return g, err
+	}
+
+	accessToken, err := c.twitchAuthToken()
+	if err != nil {
+		return g, err
+	}
+
+	gamesQuery = fmt.Sprintf("https://api.twitch.tv/helix/games?id=%s", gameID)
+
+	r, err := http.NewRequest("GET", gamesQuery, nil)
+	if err != nil {
+		log.Error(err)
+	}
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("client-id", c.Config.TwitchClientID)
+	r.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		return g, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return g, err
+	}
+
+	gamesResponse := TwitchGamesResponse{}
+	err = json.Unmarshal(body, &gamesResponse)
+	if err != nil {
+		return g, err
+	}
+
+	if len(gamesResponse.Data) != 1 {
+		err = fmt.Errorf("game query for '%s' did not return exactly 1 result", gameID)
+		return g, err
+	}
+
+	return gamesResponse.Data[0], nil
+}
+
 func (c *Controller) updateLiveStatus(streams []StreamData) error {
 
 	var live bool
@@ -275,7 +340,11 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 				if !p.IsTwitchLive() {
 					c.setTwitchLive(p, s.Type)
 					streamLink := fmt.Sprintf("https://twitch.tv/%s", p.TwitchStream)
-					notification := fmt.Sprintf(":movie_camera: %s started a public stream on twitch!\ntitle: %s\nwatch now: `%s`", p.Name, s.Title, streamLink)
+					g, err := c.getGame(s.GameID)
+					if err != nil {
+						return err
+					}
+					notification := fmt.Sprintf(":movie_camera: %s started a public stream on twitch!\ntitle: %s\ngame: %s\nwatch now: `%s`", p.Name, s.Title, g.Name, streamLink)
 					c.setTwitchNotification(p, notification)
 				}
 			}
