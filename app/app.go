@@ -21,6 +21,7 @@ var DataBuckets = []string{
 	"TwitchStreamBucket",       // Local publishers -> twitch stream names
 	"TwitchLiveBucket",         // Local publishers -> twitch live stream status
 	"TwitchNotificationBucket", // Local publishers -> twitch notification state
+	"StreamInfoBucket",         // Local publishers -> generic stream information
 }
 
 func init() {

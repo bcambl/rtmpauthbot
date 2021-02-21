@@ -307,7 +307,7 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 		return err
 	}
 
-	// mark previous live streams -> offline
+	// mark previous live streams -> offline and notify of stream info change
 	for i := range publishers {
 		live = false
 		p := &publishers[i]
@@ -316,10 +316,23 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 				s := streams[x]
 				if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
 					live = true
+					// retieve stream info
+					g, err := c.getGame(s.GameID)
+					if err != nil {
+						return err
+					}
+					streamInfo := fmt.Sprintf("title: %s\ngame: %s", s.Title, g.Name)
+					if p.StreamInfo != "" && p.StreamInfo != streamInfo {
+						// streamer changed their stream info, set notification
+						notification := fmt.Sprintf("%s switched it up!\n%s", p.Name, p.StreamInfo)
+						c.setBucketValue("TwitchNotificationBucket", p.Name, notification)
+					}
+					p.StreamInfo = streamInfo
 				}
 			}
 			if !live {
 				c.setBucketValue("TwitchLiveBucket", p.Name, "")
+				c.setBucketValue("StreamInfoBucket", p.Name, "")
 				notification := fmt.Sprintf(":checkered_flag: %s finished streaming on twitch", p.Name)
 				c.setBucketValue("TwitchNotificationBucket", p.Name, notification)
 			}
@@ -338,12 +351,8 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 				if !p.IsTwitchLive() {
 					c.setBucketValue("TwitchLiveBucket", p.Name, s.Type)
 					streamLink := fmt.Sprintf("https://twitch.tv/%s", p.TwitchStream)
-					g, err := c.getGame(s.GameID)
-					if err != nil {
-						return err
-					}
-					notification := fmt.Sprintf(":movie_camera: %s started a public stream on twitch!"+
-						"\ntitle: %s\ngame: %s\nwatch now: `%s`", p.Name, s.Title, g.Name, streamLink)
+					notification := fmt.Sprintf(":movie_camera: %s started streaming on twitch!"+
+						"\n%s\nwatch now: `%s`", p.Name, p.StreamInfo, streamLink)
 					c.setBucketValue("TwitchNotificationBucket", p.Name, notification)
 				}
 			}

@@ -17,6 +17,7 @@ type Publisher struct {
 	TwitchStream       string `json:"twitch_stream"`
 	TwitchLive         string `json:"twitch_live"`
 	TwitchNotification string `json:"-"`
+	StreamInfo         string `json:"-"`
 }
 
 // IsValid perform basic validations on a publisher record
@@ -64,6 +65,12 @@ func (c *Controller) FetchPublisher(p *Publisher) error {
 	if err != nil {
 		return err
 	}
+	p.TwitchNotification = string(b)
+	b, err = c.getBucketValue("SteamInfoBucket", p.Name)
+	if err != nil {
+		return err
+	}
+	p.StreamInfo = string(b)
 
 	return nil
 }
