@@ -184,6 +184,14 @@ func streamQueryURL(publishers []Publisher) (string, error) {
 	return "https://api.twitch.tv/helix/streams/?" + userQuery, nil
 }
 
+func (c *Controller) getStreamInfo(s StreamData) (string, error) {
+	g, err := c.getGame(s.GameID)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("title: %s\ngame: %s", s.Title, g.Name), err
+}
+
 func (c *Controller) getStreams() ([]StreamData, error) {
 
 	var (
@@ -316,12 +324,11 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 				s := streams[x]
 				if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
 					live = true
-					// retieve stream info
-					g, err := c.getGame(s.GameID)
+					// save stream info for comparison against existing p.StreamInfo
+					streamInfo, err := c.getStreamInfo(s)
 					if err != nil {
 						return err
 					}
-					streamInfo := fmt.Sprintf("title: %s\ngame: %s", s.Title, g.Name)
 					if p.StreamInfo != "" && p.StreamInfo != streamInfo {
 						// streamer changed their stream info, set notification
 						notification := fmt.Sprintf("%s switched it up!\n%s", p.Name, p.StreamInfo)
@@ -350,6 +357,10 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 			if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
 				if !p.IsTwitchLive() {
 					c.setBucketValue("TwitchLiveBucket", p.Name, s.Type)
+					p.StreamInfo, err = c.getStreamInfo(s)
+					if err != nil {
+						return err
+					}
 					streamLink := fmt.Sprintf("https://twitch.tv/%s", p.TwitchStream)
 					notification := fmt.Sprintf(":movie_camera: %s started streaming on twitch!"+
 						"\n%s\nwatch now: `%s`", p.Name, p.StreamInfo, streamLink)
