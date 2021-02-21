@@ -66,7 +66,7 @@ func (c *Controller) FetchPublisher(p *Publisher) error {
 		return err
 	}
 	p.TwitchNotification = string(b)
-	b, err = c.getBucketValue("SteamInfoBucket", p.Name)
+	b, err = c.getBucketValue("StreamInfoBucket", p.Name)
 	if err != nil {
 		return err
 	}
