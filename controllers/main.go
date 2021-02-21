@@ -21,11 +21,14 @@ func (c *Controller) IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) setBucketValue(bucket, key, value string) error {
-	c.DB.Update(func(tx *bolt.Tx) error {
+	err := c.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
 		err := b.Put([]byte(key), []byte(value))
 		return err
 	})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
