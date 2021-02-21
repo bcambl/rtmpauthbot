@@ -11,7 +11,6 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	bolt "go.etcd.io/bbolt"
 	"golang.org/x/oauth2/clientcredentials"
 	"golang.org/x/oauth2/twitch"
 )
@@ -54,11 +53,11 @@ type GameData struct {
 // Config struct. This is only called when the token is not set in Config
 func (c *Controller) getCachedAccessToken() (string, error) {
 	var tokenBytes []byte
-	c.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("ConfigBucket"))
-		tokenBytes = b.Get([]byte("twitchAccessToken"))
-		return nil
-	})
+	var err error
+	tokenBytes, err = c.getBucketValue("ConfigBucket", "twitchAccessToken")
+	if err != nil {
+		return "", err
+	}
 	if len(tokenBytes) < 1 {
 		return "", errors.New("cached twitch access token not found in db")
 	}
@@ -71,11 +70,10 @@ func (c *Controller) updateCachedAccessToken(accessToken string) error {
 	if accessToken == "" {
 		return errors.New("updateCachedAccessToken: no token provided")
 	}
-	c.DB.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("ConfigBucket"))
-		err = b.Put([]byte("twitchAccessToken"), []byte(accessToken))
+	err = c.setBucketValue("ConfigBucket", "twitchAccessToken", accessToken)
+	if err != nil {
 		return err
-	})
+	}
 	return nil
 }
 
@@ -321,9 +319,9 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 				}
 			}
 			if !live {
-				c.setTwitchLive(p, "")
+				c.setBucketValue("TwitchLiveBucket", p.Name, "")
 				notification := fmt.Sprintf(":checkered_flag: %s finished streaming on twitch", p.Name)
-				c.setTwitchNotification(p, notification)
+				c.setBucketValue("TwitchNotificationBucket", p.Name, notification)
 			}
 		}
 	}
@@ -338,14 +336,15 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 			}
 			if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
 				if !p.IsTwitchLive() {
-					c.setTwitchLive(p, s.Type)
+					c.setBucketValue("TwitchLiveBucket", p.Name, s.Type)
 					streamLink := fmt.Sprintf("https://twitch.tv/%s", p.TwitchStream)
 					g, err := c.getGame(s.GameID)
 					if err != nil {
 						return err
 					}
-					notification := fmt.Sprintf(":movie_camera: %s started a public stream on twitch!\ntitle: %s\ngame: %s\nwatch now: `%s`", p.Name, s.Title, g.Name, streamLink)
-					c.setTwitchNotification(p, notification)
+					notification := fmt.Sprintf(":movie_camera: %s started a public stream on twitch!"+
+						"\ntitle: %s\ngame: %s\nwatch now: `%s`", p.Name, s.Title, g.Name, streamLink)
+					c.setBucketValue("TwitchNotificationBucket", p.Name, notification)
 				}
 			}
 		}
@@ -379,7 +378,7 @@ func (c *Controller) processNotifications() error {
 		}
 		if p.TwitchNotification != "" {
 			log.Debugf("resetting notification for %s (%s)", p.Name, p.TwitchStream)
-			err = c.setTwitchNotification(&p, "")
+			err = c.setBucketValue("TwitchNotificationBucket", p.Name, "")
 			if err != nil {
 				return err
 			}

@@ -33,15 +33,6 @@ func (p *Publisher) IsValid() error {
 	return nil
 }
 
-func (c *Controller) setLocalLive(p *Publisher, status string) error {
-	c.DB.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("RTMPLiveBucket"))
-		err := b.Put([]byte(p.Name), []byte(status))
-		return err
-	})
-	return nil
-}
-
 // IsTwitchLive returns a boolean based on string value of TwitchLive field
 func (p *Publisher) IsTwitchLive() bool {
 	if p.TwitchLive != "" {
@@ -50,26 +41,35 @@ func (p *Publisher) IsTwitchLive() bool {
 	return false
 }
 
-func (c *Controller) setTwitchLive(p *Publisher, status string) error {
-	c.DB.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("TwitchLiveBucket"))
-		err := b.Put([]byte(p.Name), []byte(status))
+// FetchPublisher populates the publisher struct from the database
+func (c *Controller) FetchPublisher(p *Publisher) error {
+	var b []byte
+	var err error
+	b, err = c.getBucketValue("RTMPLiveBucket", p.Name)
+	if err != nil {
 		return err
-	})
-	return nil
-}
+	}
+	p.RTMPLive = string(b)
+	b, err = c.getBucketValue("TwitchStreamBucket", p.Name)
+	if err != nil {
+		return err
+	}
+	p.TwitchStream = string(b)
+	b, err = c.getBucketValue("TwitchLiveBucket", p.Name)
+	if err != nil {
+		return err
+	}
+	p.TwitchLive = string(b)
+	b, err = c.getBucketValue("TwitchNotificationBucket", p.Name)
+	if err != nil {
+		return err
+	}
 
-func (c *Controller) setTwitchNotification(p *Publisher, notification string) error {
-	c.DB.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("TwitchNotificationBucket"))
-		err := b.Put([]byte(p.Name), []byte(notification))
-		return err
-	})
 	return nil
 }
 
 func (c *Controller) getAllPublisher() ([]Publisher, error) {
-	var stream, rtmpLive, twitchLive, notification []byte
+	var err error
 	publishers := []Publisher{}
 	c.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("PublisherBucket"))
@@ -85,74 +85,35 @@ func (c *Controller) getAllPublisher() ([]Publisher, error) {
 
 	for i := range publishers {
 		p := &publishers[i]
-		c.DB.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte("RTMPLiveBucket"))
-			rtmpLive = b.Get([]byte(p.Name))
-			return nil
-		})
-		c.DB.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte("TwitchStreamBucket"))
-			stream = b.Get([]byte(p.Name))
-			return nil
-		})
-		c.DB.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte("TwitchLiveBucket"))
-			twitchLive = b.Get([]byte(p.Name))
-			return nil
-		})
-		c.DB.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte("TwitchNotificationBucket"))
-			notification = b.Get([]byte(p.Name))
-			return nil
-		})
-		p.RTMPLive = string(rtmpLive)
-		p.TwitchStream = string(stream)
-		p.TwitchLive = string(twitchLive)
-		p.TwitchNotification = string(notification)
+		err = c.FetchPublisher(p)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return publishers, nil
 }
 
 func (c *Controller) getPublisher(name string) (Publisher, error) {
-	var key, stream, rtmpLive, twitchLive, notification []byte
+	var keyBytes []byte
+	var err error
+
 	p := Publisher{}
-	c.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("PublisherBucket"))
-		key = b.Get([]byte(name))
-		return nil
-	})
-	if len(key) < 1 {
+
+	keyBytes, err = c.getBucketValue("PublisherBucket", name)
+	if err != nil {
+		return p, err
+	}
+	p.Key = string(keyBytes)
+
+	if len(p.Key) < 1 {
 		return p, errors.New("publisher not found")
 	}
 
-	c.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("RTMPLiveBucket"))
-		rtmpLive = b.Get([]byte(p.Name))
-		return nil
-	})
-	c.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("TwitchStreamBucket"))
-		stream = b.Get([]byte(name))
-		return nil
-	})
-	c.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("TwitchLiveBucket"))
-		twitchLive = b.Get([]byte(name))
-		return nil
-	})
-	c.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("TwitchNotificationBucket"))
-		notification = b.Get([]byte(name))
-		return nil
-	})
-
-	p.Name = name
-	p.Key = string(key)
-	p.RTMPLive = string(rtmpLive)
-	p.TwitchLive = string(twitchLive)
-	p.TwitchStream = string(stream)
-	p.TwitchNotification = string(notification)
+	err = c.FetchPublisher(&p)
+	if err != nil {
+		return p, err
+	}
 
 	return p, nil
 }
@@ -231,7 +192,7 @@ func (c *Controller) OnPublishHandler(w http.ResponseWriter, r *http.Request) {
 	serverFQDN := c.Config.RTMPServerFQDN
 	serverPort := c.Config.RTMPServerPort
 
-	err = c.setLocalLive(&p, "live")
+	err = c.setBucketValue("RTMPLiveBucket", p.Name, "live")
 	if err != nil {
 		log.Error("error enabling local live status")
 	}
@@ -265,7 +226,7 @@ func (c *Controller) OnPublishDoneHandler(w http.ResponseWriter, r *http.Request
 	}
 	log.Printf("on_publish_done authorized: %s", p.Name)
 
-	err = c.setLocalLive(&p, "")
+	err = c.setBucketValue("RTMPLiveBucket", p.Name, "")
 	if err != nil {
 		log.Error("error disabling local live status")
 	}

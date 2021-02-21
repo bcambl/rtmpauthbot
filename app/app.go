@@ -13,6 +13,16 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+// DataBuckets is a slice of all buckets that exist throught the project
+var DataBuckets = []string{
+	"ConfigBucket",             // General configuration & caching
+	"PublisherBucket",          // Local publishers -> rtmp stream keys
+	"RTMPLiveBucket",           // Local publishers -> rtmp live stream status
+	"TwitchStreamBucket",       // Local publishers -> twitch stream names
+	"TwitchLiveBucket",         // Local publishers -> twitch live stream status
+	"TwitchNotificationBucket", // Local publishers -> twitch notification state
+}
+
 func init() {
 	debugFlag := flag.Bool("debug", false, "enable debug logging")
 	envVarsFlag := flag.Bool("environment", false, "print environment variables with defaults")
@@ -47,19 +57,10 @@ func init() {
 	}
 	defer db.Close()
 
-	bucketList := []string{
-		"ConfigBucket",             // General configuration & caching
-		"PublisherBucket",          // Local publishers -> rtmp stream keys
-		"RTMPLiveBucket",           // Local publishers -> rtmp live stream status
-		"TwitchStreamBucket",       // Local publishers -> twitch stream names
-		"TwitchLiveBucket",         // Local publishers -> twitch live stream status
-		"TwitchNotificationBucket", // Local publishers -> twitch notification state
-	}
-
-	for b := range bucketList {
-		log.Debug("db: ensuring bucket exists: ", bucketList[b])
+	for b := range DataBuckets {
+		log.Debug("db: ensuring bucket exists: ", DataBuckets[b])
 		db.Update(func(tx *bolt.Tx) error {
-			_, err := tx.CreateBucketIfNotExists([]byte(bucketList[b]))
+			_, err := tx.CreateBucketIfNotExists([]byte(DataBuckets[b]))
 			if err != nil {
 				return fmt.Errorf("error creating bucket: %s", err)
 			}
