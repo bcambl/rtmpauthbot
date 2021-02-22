@@ -329,12 +329,12 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 					if err != nil {
 						return err
 					}
-					if p.StreamInfo != "" && p.StreamInfo != streamInfo {
+					if p.StreamInfo != streamInfo {
 						// streamer changed their stream info, set notification
-						notification := fmt.Sprintf("%s switched it up!\n%s", p.Name, p.StreamInfo)
+						notification := fmt.Sprintf("%s updated stream info:\n%s", p.Name, streamInfo)
 						c.setBucketValue("TwitchNotificationBucket", p.Name, notification)
+						c.setBucketValue("StreamInfoBucket", p.Name, streamInfo)
 					}
-					p.StreamInfo = streamInfo
 				}
 			}
 			if !live {
@@ -357,13 +357,14 @@ func (c *Controller) updateLiveStatus(streams []StreamData) error {
 			if strings.ToLower(s.UserName) == strings.ToLower(p.TwitchStream) {
 				if !p.IsTwitchLive() {
 					c.setBucketValue("TwitchLiveBucket", p.Name, s.Type)
-					p.StreamInfo, err = c.getStreamInfo(s)
+					streamInfo, err := c.getStreamInfo(s)
 					if err != nil {
 						return err
 					}
 					streamLink := fmt.Sprintf("https://twitch.tv/%s", p.TwitchStream)
 					notification := fmt.Sprintf(":movie_camera: %s started streaming on twitch!"+
-						"\n%s\nwatch now: `%s`", p.Name, p.StreamInfo, streamLink)
+						"\n%s\nwatch now: `%s`", p.Name, streamInfo, streamLink)
+					c.setBucketValue("StreamInfoBucket", p.Name, streamInfo)
 					c.setBucketValue("TwitchNotificationBucket", p.Name, notification)
 				}
 			}
