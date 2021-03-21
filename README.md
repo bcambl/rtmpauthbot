@@ -4,8 +4,9 @@ rtmpauthbot
 `rtmpauthbot` is an authentication & notification system to be used along side the nginx rtmp module.
 
 ## Background
-`rtmpauthbot` project was built to serve the needs of a small Discord community to allow high quality video streaming to a private rtmp server to remain social during the COVID-19 pandemic. Notifications will be posted to Discord When a member starts streaming, as well as notifications when a rtmp stream gains or loses a viewer.  
-Each member may also have a twitch channel configured in `rtmpauthbot` which differs from their discord/publisher user name. When a twitch channel is defined for a member, notifications will be posted when the twitch stream is live/off-line. This functionality can also serve as general twitch notifications for favorite streamers of the discord community.
+`rtmpauthbot` was built to provide a small Discord community with a private rtmp server with a simple authentication mechanism and basic notifications for when members start and stop streaming.
+
+Each member may also have a twitch channel configured which differs from their discord/publisher user name. When a twitch channel is defined for a member, notifications will be posted when the twitch stream is live/off-line. This functionality can also serve as general twitch notifications for favorite streamers of the discord community.
 
 ## Features
 - Authentication system for NGiNX RTMP module
