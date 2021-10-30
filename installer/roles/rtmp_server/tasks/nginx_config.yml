@@ -1,0 +1,81 @@
+---
+
+# Setup Nginx
+- name: Create a symbolic link for nginx modules
+  file:
+    src: /usr/lib64/nginx/modules
+    dest: /etc/nginx/modules
+    owner: root
+    group: root
+    state: link
+  tags:
+    - nginx_config
+
+- name: add nginx user system account
+  user:
+    name: nginx
+    home: /var/cache/nginx/
+    shell: /sbin/nologin
+    system: true
+  tags:
+    - nginx_config
+
+- name: create hls directory
+  file:
+    path: /mnt/hls
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: '0755'
+  tags:
+    - nginx_config
+
+- name: create mp4s directory
+  file:
+    path: /mnt/mp4s
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: '0755'
+  tags:
+    - nginx_config
+
+- name: Deploy nginx configuration
+  copy:
+    src: files/nginx.conf
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  tags:
+    - nginx_config
+
+- name: Create /var/cache/nginx
+  file:
+    path: /var/cache/nginx
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: '0755'
+  tags:
+    - nginx_config
+
+- name: deploy nginx service file
+  copy:
+    src: files/nginx.service
+    dest: /etc/systemd/system/nginx.service
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - nginx_config
+
+- name: enable & restart nginx service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    name: nginx
+  tags:
+    - nginx_config

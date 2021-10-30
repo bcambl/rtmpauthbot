@@ -1,0 +1,16 @@
+---
+
+nginx_version: "1.17.10"
+nginx_source: "https://nginx.org/download/nginx-{{ nginx_version }}.tar.gz"
+
+pcre_version: "8.44"
+pcre_source: "https://ftp.pcre.org/pub/pcre/pcre-{{ pcre_version }}.tar.gz"
+
+zlib_version: "1.2.11"
+zlib_source: "https://www.zlib.net/zlib-{{ zlib_version }}.tar.gz"
+
+openssl_version: "1.1.1g"
+openssl_source: "https://www.openssl.org/source/openssl-{{ openssl_version }}.tar.gz"
+
+rtmp_module_repo: "https://github.com/sergey-dryabzhinsky/nginx-rtmp-module.git"
+

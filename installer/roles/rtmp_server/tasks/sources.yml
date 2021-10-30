@@ -1,0 +1,22 @@
+---
+
+- name: "retrieve source code tar.gz files"
+  unarchive:
+    src: "{{ item }}"
+    dest: /usr/local/src
+    remote_src: yes
+  with_items:
+    - "{{ nginx_source }}"
+    - "{{ pcre_source }}"
+    - "{{ zlib_source }}"
+    - "{{ openssl_source }}"
+  register: source_unpack
+  tags:
+    - sources
+
+- name: "git clone nginx rtmp module"
+  git:
+    repo: https://github.com/sergey-dryabzhinsky/nginx-rtmp-module.git
+    dest: /usr/local/src/nginx-rtmp-module
+  tags:
+    - sources
