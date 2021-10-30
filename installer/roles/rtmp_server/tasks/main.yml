@@ -1,0 +1,7 @@
+---
+- import_tasks: dependencies.yml
+- import_tasks: sources.yml
+- import_tasks: build.yml
+- import_tasks: nginx_config.yml
+- import_tasks: firewall.yml
+- import_tasks: authentication.yml

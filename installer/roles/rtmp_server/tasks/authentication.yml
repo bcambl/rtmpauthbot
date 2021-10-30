@@ -1,0 +1,118 @@
+---
+
+- name: query latest releases of rtmpauthbot
+  uri:
+    url: https://api.github.com/repos/bcambl/rtmpauthbot/releases/latest
+    status_code: 200
+    body: json
+  register: rtmpauthbot_releases_response
+  tags:
+    - authentication
+
+- name: determine the url for latest rtmpauthbot binary
+  vars:
+    response_json: "{{ rtmpauthbot_releases_response | json_query('json') }}"
+    file_suffix: "linux_{% if ansible_architecture == 'x86_64' %}amd64{% else %}{{ ansible_architecture }}{% endif %}.tar.gz"
+  set_fact:
+    rtmpauthbot_download_url: "{{ item.browser_download_url }}"
+  with_items: "{{ response_json.assets }}"
+  when: item.browser_download_url | regex_search(file_suffix)
+  no_log: yes
+  tags:
+    - authentication
+
+- name: download and install the latest rtmpauthbot release
+  unarchive:
+    src: "{{ rtmpauthbot_download_url }}"
+    dest: /usr/local/bin/
+    remote_src: yes
+  tags:
+    - authentication
+
+- name: create rtmpauthbot logging directory
+  file:
+    path: /var/log/rtmpauthbot
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: '0750'
+  tags:
+    - authentication
+
+- name: create rtmpauthbot configuration directory
+  file:
+    path: /etc/rtmpauthbot
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags:
+    - authentication
+
+- name: create rtmpauthbot default database directory
+  file:
+    path: /var/lib/rtmpauthbot
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: '0755'
+  tags:
+    - authentication
+
+- name: check for existing rtmpauthbot env file
+  stat:
+    path: /etc/rtmpauthbot/rtmpauthbot.env
+  register: rtmpauthbot_env_file
+  tags:
+    - authentication
+
+- name: generate rtmpauthbot env file
+  shell: /usr/local/bin/rtmpauthbot -environment > /etc/rtmpauthbot/rtmpauthbot.env
+  when: not rtmpauthbot_env_file.stat.exists
+  tags:
+    - authentication
+
+- name: generate rtmpauthbot env.new file when existing config detected
+  shell: /usr/local/bin/rtmpauthbot -environment > /etc/rtmpauthbot/rtmpauthbot.env.new
+  when: rtmpauthbot_env_file.stat.exists
+  tags:
+    - authentication
+
+- debug:
+    msg: "EXISTING CONFIG DETECTED. PLEASE COMPARE EXISTING CONFIG WITH NEW: /etc/rtmpauthbot/rtmpauthbot.env.new"
+  when: rtmpauthbot_env_file.stat.exists
+  tags:
+    - authentication
+
+- name: check for existing rtmpauthbot systemd unit file
+  stat:
+    path: /etc/systemd/system/rtmpauthbot.service
+  register: rtmpauthbot_unit_file
+  tags:
+    - authentication
+
+- name: generate rtmpauthbot systemd service unit file
+  shell: /usr/local/bin/rtmpauthbot -unitfile > /etc/systemd/system/rtmpauthbot.service
+  when: not rtmpauthbot_unit_file.stat.exists
+  tags:
+    - authentication
+
+- name: generate rtmpauthbot systemd service.new unit file
+  shell: /usr/local/bin/rtmpauthbot -unitfile > /etc/systemd/system/rtmpauthbot.service.new
+  when: rtmpauthbot_unit_file.stat.exists
+  tags:
+    - authentication
+
+- debug:
+    msg: "EXISTING UNIT FILE DETECTED. PLEASE COMPARE EXISTING UNIT WITH NEW: /etc/systemd/system/rtmpauthbot.service.new"
+  when: rtmpauthbot_unit_file.stat.exists
+  tags:
+    - authentication
+
+- name: restart and enable rtmpauthbot service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: rtmpauthbot
+  tags:
+    - authentication

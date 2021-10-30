@@ -1,0 +1,36 @@
+---
+
+- name: deploy configure template
+  template:
+    src: config_script.j2
+    dest: "/usr/local/src/nginx-{{ nginx_version }}/config_script.sh"
+    owner: root
+    group: wheel
+    mode: '0700'
+  when: source_unpack is changed
+  tags:
+    - build
+
+- name: Configuring nginx
+  command: "/usr/local/src/nginx-{{ nginx_version }}/config_script.sh"
+  args:
+    chdir: "/usr/local/src/nginx-{{ nginx_version }}"
+  when: source_unpack is changed
+  register: nginx_configure
+  tags:
+    - build
+
+- name: make nginx
+  make:
+    chdir: "/usr/local/src/nginx-{{ nginx_version }}"
+  when: source_unpack is changed
+  tags:
+    - build
+
+- name: make install nginx
+  make:
+    chdir: "/usr/local/src/nginx-{{ nginx_version }}"
+    target: install
+  when: source_unpack is changed
+  tags:
+    - build

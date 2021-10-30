@@ -1,0 +1,67 @@
+---
+
+- name: Enable EPEL on CentOS
+  dnf:
+    name: epel-release
+    state: present
+  when: ansible_distribution == 'CentOS'
+  tags:
+    - dependencies
+
+- name: Enable RPM Fusion Free/NonFree
+  dnf:
+    name:
+      - "http://download1.rpmfusion.org/free/{{ 'fedora' if ansible_distribution == 'Fedora' else 'el' }}/rpmfusion-free-release-{{ ansible_distribution_major_version }}.noarch.rpm"
+      - "http://download1.rpmfusion.org/nonfree/{{ 'fedora' if ansible_distribution == 'Fedora' else 'el' }}/rpmfusion-nonfree-release-{{ ansible_distribution_major_version }}.noarch.rpm"
+    state: present
+    disable_gpg_check: yes
+  tags:
+    - dependencies
+
+- name: Enable PowerTools
+  lineinfile:
+    path: /etc/yum.repos.d/CentOS-Stream-PowerTools.repo
+    create: false
+    regexp: 'enabled='
+    line: 'enabled=1'
+  when: ansible_distribution == 'CentOS'
+  tags:
+    - dependencies
+
+- name: install general project dependencies
+  dnf:
+    name:
+      - wget
+      - git
+      - python3
+      - ffmpeg
+    state: present
+    update_cache: yes
+  tags:
+    - dependencies
+
+- name: install development tools package group
+  dnf:
+    name: '@Development tools'
+    state: present
+  tags:
+    - dependencies
+
+- name: install nginx build dependencies
+  dnf:
+    name:
+      - perl
+      - perl-devel
+      - perl-ExtUtils-Embed
+      - libxslt
+      - libxslt-devel
+      - libxml2
+      - libxml2-devel
+      - gd
+      - gd-devel
+      - pcre-devel
+      - GeoIP
+      - GeoIP-devel
+    state: present
+  tags:
+    - dependencies

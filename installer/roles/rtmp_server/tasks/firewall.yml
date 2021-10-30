@@ -1,0 +1,14 @@
+---
+
+- name: configure firewall ports for rtmp and vod
+  firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: yes
+    state: enabled
+  with_items:
+    - 1935/tcp
+    - 1935/udp
+    - 8080/tcp
+  tags:
+    - firewall
